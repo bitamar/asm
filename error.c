@@ -6,6 +6,6 @@
  * Prints an error message and terminates the program.
  */
 void error_fatal(const char* message) {
-	fprintf(stderr, "%s:\n%s\n", ERROR_FATAL_ERROR, message);
+	fprintf(stderr, "%s %s\n", ERROR_TITLE, message);
 	exit(EXIT_FAILURE);
 }

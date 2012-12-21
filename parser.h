@@ -10,6 +10,15 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+enum LabelsValues {
+	MAIN = 100,
+	LOOP = 105,
+	END = 117,
+	STR = 118,
+	LENGTH = 125,
+	K
+};
+
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
