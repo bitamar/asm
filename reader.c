@@ -2,6 +2,7 @@
  * reader.c
  *
  *	Required by: parser
+ *
  *  Created on: Dec 5, 2012
  *      Author: Itamar Bar-Lev
  */
@@ -11,15 +12,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-FILE* file;
+FILE* reader_file;
 
 /**
  * Open a file for reading.
  * Store the file pointer in the reader's global variable.
  */
 void reader_open_file(const char* file_name) {
-	file = fopen(file_name, "r");
-	if (!file)
+	reader_file = fopen(file_name, "r");
+	if (!reader_file)
 		error_fatal(ErrorCantRead);
 }
 
@@ -36,11 +37,11 @@ char* reader_get_line() {
 		error_fatal(ErrorMemoryAlloc);
 
 	do {
-	    line[position++] = getc(file);
+	    line[position++] = getc(reader_file);
 
 	    /* If the position is divisible by the initial size, then more space is
 	     * needed for the line. */
-	    if(!(position %  ReaderLineLengthInit)) {
+	    if(!(position % ReaderLineLengthInit)) {
 	    	/* Increase the line length by the initial size. */
 			length += ReaderLineLengthInit;
 			line = (char*)realloc(line, length);
@@ -60,5 +61,5 @@ char* reader_get_line() {
  * Close the reader's file.
  */
 void reader_close_file() {
-	fclose(file);
+	fclose(reader_file);
 }
