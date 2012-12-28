@@ -19,12 +19,11 @@ void parser_parse() {
 short int parser_line_get_label(const char* line) {
 	short int i;
 	const char* labels[] = {"MAIN", "LOOP", "END", "STR", "LENGTH", "K"};
-
-	for (i = 0; i < ParserLabelsAmount; i++){
-		if (parser_line_has_label(line, labels[i])) {
-			return 100;
-		}
-	}
+	const short int label_values[] = {MAIN, LOOP, END, STR, LENGTH, K};
+	/* Iterate the labels and check whether the line starts with one of them. */
+	for (i = 0; i < ParserLabelsAmount; i++)
+		if (parser_line_has_label(line, labels[i]))
+			return label_values[i];
 
 	return ParserNoLabel;
 }

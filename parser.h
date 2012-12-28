@@ -10,13 +10,13 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-enum ParserLabelsValues {
+enum ParserLabelValues {
 	MAIN = 100,
 	LOOP = 105,
 	END = 117,
 	STR = 118,
 	LENGTH = 125,
-	K
+	K = 0
 };
 
 #define ParserLabelsAmount 6
