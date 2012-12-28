@@ -17,18 +17,30 @@ void parser_parse() {
 }
 
 short int parser_line_get_label(const char* line) {
-	short int label = ParserNoLabel, i;
+	short int i;
 	const char* labels[] = {"MAIN", "LOOP", "END", "STR", "LENGTH", "K"};
 
 	for (i = 0; i < ParserLabelsAmount; i++){
-
+		if (parser_line_has_label(line, labels[i])) {
+			return 100;
+		}
 	}
 
-	return label;
+	return ParserNoLabel;
 }
 
-short int parser_string_starts_with_word(const char* string, const char* word) {
+short int parser_line_has_label(const char* line, const char* label) {
+	/* Iterate the first word in the line, until colon, space or end of line is
+	 * found. */
+	while(*line && *line != ':' && *line != ' ') {
+		/* Return false when a character differs between the word and the
+		 * string. */
+		if (*line != *label)
+			return 0;
 
+		line++;
+		label++;
+	}
 
 	return 1;
 }

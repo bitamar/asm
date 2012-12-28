@@ -34,4 +34,10 @@ void parser_parse();
  */
 short int parser_line_get_label(const char* line);
 
+/**
+ * Check whether a line has a specific label.
+ * Returns 1 or 0.
+ */
+short int parser_line_has_label(const char* line, const char* label);
+
 #endif /* PARSER_H_ */
