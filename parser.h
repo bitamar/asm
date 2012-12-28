@@ -19,6 +19,8 @@ enum LabelsValues {
 	K
 };
 
+#define LabelsAmount 6
+
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader

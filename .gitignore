@@ -15,3 +15,13 @@
 *.exe
 *.out
 *.app
+
+.cproject
+
+.project
+
+*.prefs
+
+*.d
+
+*.mk

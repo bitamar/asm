@@ -20,5 +20,5 @@ void parser_parse() {
 }
 
 char parser_line_get_label(const char* line) {
-	char* labels[] = {};
+	char* labels[] = {"MAIN", "LOOP", "END", "STR", "LENGTH", "K"};
 }
