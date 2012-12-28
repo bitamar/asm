@@ -20,7 +20,7 @@ FILE* file;
 void reader_open_file(const char* file_name) {
 	file = fopen(file_name, "r");
 	if (!file)
-		error_fatal(ERROR_CANT_READ);
+		error_fatal(ErrorCantRead);
 }
 
 /**
@@ -28,24 +28,24 @@ void reader_open_file(const char* file_name) {
  * The returned string must be freed by the invoker.
  */
 char* reader_get_line() {
-	int length = READER_LINE_LENGTH_INIT;
+	int length = ReaderLineLengthInit;
 	int position = 0;
 	char *line = (char*)malloc(length);
 
 	if (!line)
-		error_fatal(ERROR_MEMORY_ALLOC);
+		error_fatal(ErrorMemoryAlloc);
 
 	do {
 	    line[position++] = getc(file);
 
 	    /* If the position is divisible by the initial size, then more space is
 	     * needed for the line. */
-	    if(!(position %  READER_LINE_LENGTH_INIT)) {
+	    if(!(position %  ReaderLineLengthInit)) {
 	    	/* Increase the line length by the initial size. */
-			length += READER_LINE_LENGTH_INIT;
+			length += ReaderLineLengthInit;
 			line = (char*)realloc(line, length);
 			if (!line)
-				error_fatal(ERROR_MEMORY_ALLOC);
+				error_fatal(ErrorMemoryAlloc);
 		}
 	} while (line[position - 1] != '\n' && line[position - 1] != EOF);
 

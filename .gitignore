@@ -25,3 +25,5 @@
 *.d
 
 *.mk
+
+Debug/asm

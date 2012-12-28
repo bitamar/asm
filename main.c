@@ -8,7 +8,7 @@
  */
 int main(int argc, char* argv[]) {
 	if (argc < 2)
-		error_fatal(ERROR_MISSING_ARGUMENT);
+		error_fatal(ErrorMissingArgument);
 
 	reader_open_file(argv[1]);
 

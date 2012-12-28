@@ -5,7 +5,7 @@
  *  The initial size of the string that will hold a line of the file. If the row
  *  exceeds the initial length, more space will be allocated.
  */
-#define READER_LINE_LENGTH_INIT 20
+#define ReaderLineLengthInit 20
 
 /**
  * Open a file for reading.
