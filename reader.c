@@ -1,7 +1,7 @@
 /*
  * reader.c
  *
- *	Required by: parser
+ *	Required by: 
  *
  *  Created on: Dec 5, 2012
  *      Author: Itamar Bar-Lev

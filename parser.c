@@ -6,40 +6,35 @@
 
 void parser_parse() {
 	char* line;
+	char* label;
 	int ic = 0, dc = 0;
-	short int label;
+	
 
 	while ((line = reader_get_line())) {
-		label = parser_line_get_label(line);
-		printf("%s:%d\n", line, label);
+		label = parser_get_label(line);
+		printf("%s:%s\n", line, label);
 		free(line);
+		free(label);
 	}
 }
 
-short int parser_line_get_label(const char* line) {
-	short int i;
-	const char* labels[] = {"MAIN", "LOOP", "END", "STR", "LENGTH", "K"};
-	const short int label_values[] = {MAIN, LOOP, END, STR, LENGTH, K};
-	/* Iterate the labels and check whether the line starts with one of them. */
-	for (i = 0; i < ParserLabelsAmount; i++)
-		if (parser_line_has_label(line, labels[i]))
-			return label_values[i];
-
-	return ParserNoLabel;
-}
-
-short int parser_line_has_label(const char* line, const char* label) {
+char* parser_get_label(const char* line) {
+	int len = 0;
+	char* label;
+	char* c = line;
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
-	while(*line && *line != ':' && *line != ' ') {
-		/* Return false when a character differs between the word and the
-		 * string. */
-		if (*line != *label)
-			return 0;
-
-		line++;
-		label++;
+	while(*c && *c != ' ' && *c != '\t') {
+		c++;
+		len++;
 	}
-
-	return 1;
+	
+	if (len && line[len - 1] == ':') {
+		label = (char*)malloc(len - 1);
+		strncpy(label, line, len - 1);
+		label[len - 1] = '\0';
+		return label;
+	}
+	
+	return NULL;
 }
