@@ -20,8 +20,10 @@ FILE* reader_file;
  */
 void reader_open_file(const char* file_name) {
 	reader_file = fopen(file_name, "r");
-	if (!reader_file)
-		error_fatal(ErrorCantRead);
+	if (!reader_file) {
+		fprintf(stderr, ErrorCantRead, file_name);
+		exit(EXIT_FAILURE);
+	}
 }
 
 /**

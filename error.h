@@ -3,7 +3,7 @@
 
 #define ErrorTitle "Error:"
 #define ErrorMissingArgument "Missing argument."
-#define ErrorCantRead "Could not open file for reading."
+#define ErrorCantRead "Could not open file %s for reading."
 #define ErrorMemoryAlloc "Memory allocation failed."
 
 /**

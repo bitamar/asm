@@ -1,3 +1,10 @@
+/asm
+/nbproject/Package-Default.bash
+/nbproject/configurations.xml
+/nbproject/private/Default.properties
+/nbproject/private/configurations.xml
+/nbproject/private/private.xml
+/nbproject/project.xml
 # Object files
 *.o
 
