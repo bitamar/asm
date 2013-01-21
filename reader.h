@@ -7,6 +7,10 @@
  */
 #define ReaderLineLengthInit 20
 
+#define ReaderFileExtension "as"
+
+#define ReaderFileExtensionLength 2
+
 /**
  * Open a file for reading.
  */

@@ -7,10 +7,11 @@
  *      Author: Itamar Bar-Lev
  */
 
-#include "reader.h"
 #include "error.h"
+#include "reader.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 FILE* reader_file;
 
@@ -19,9 +20,23 @@ FILE* reader_file;
  * Store the file pointer in the reader's global variable.
  */
 void reader_open_file(const char* file_name) {
-	reader_file = fopen(file_name, "r");
+	int len;
+	char* full_file_name;
+
+	/* Create a string with the file name and extension. */
+	len = strlen(file_name);
+	full_file_name = (char*) malloc(len + ReaderFileExtensionLength + 1);
+	if (!full_file_name)
+		error_fatal(ErrorMemoryAlloc);
+
+	strcpy(full_file_name, file_name);
+	full_file_name[len] = '.';
+	strcpy(full_file_name + len + 1, ReaderFileExtension);
+	full_file_name[len + ReaderFileExtensionLength + 1] = '\0';
+
+	reader_file = fopen(full_file_name, "r");
 	if (!reader_file) {
-		fprintf(stderr, ErrorCantRead, file_name);
+		fprintf(stderr, ErrorCantRead, full_file_name);
 		exit(EXIT_FAILURE);
 	}
 }
