@@ -7,7 +7,7 @@
 /**
  * List of errors found while parsing files.
  */
-List error_list;
+List* error_list;
 
 /**
  * Prints an error message and terminates the program.
@@ -24,13 +24,13 @@ void error_set(const char* message) {
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(_message, message);
 	
-	list_append(error_list, _message);
+	error_list = list_append(error_list, _message);
 }
 
 void error_print_list() {
-	list_print(error_list, NULL);
+	list_print(error_list, &_error_print_item);
 }
 
 void _error_print_item(void* data) {
-	fprintf(stderr, "hoy");
+	fprintf(stderr, "Error: %s\n", (char*)data);
 }
