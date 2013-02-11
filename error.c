@@ -32,7 +32,7 @@ void error_print_list() {
 }
 
 void _error_print_item(void* data) {
-	fprintf(stderr, "Error: %s\n", (char*)data);
+	fprintf(stderr, "%s %s\n", ErrorTitle, (char*)data);
 }
 
 void error_destruct() {

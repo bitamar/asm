@@ -1,6 +1,6 @@
 #include "error.h"
-#include "reader.h"
 #include "parser.h"
+#include "reader.h"
 #include <stdlib.h>
 
 /**
