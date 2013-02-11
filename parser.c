@@ -14,7 +14,6 @@ void parser_parse() {
 	while ((line = reader_get_line())) {
 		label = parser_get_label(line);
 		
-		
 		free(line);
 		free(label);
 	}
@@ -23,7 +22,7 @@ void parser_parse() {
 char* parser_get_label(const char* line) {
 	int len = 0;
 	char* label;
-	char* c = line;
+	const char* c = line;
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
 	while(*c && *c != ' ' && *c != '\t') {

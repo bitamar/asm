@@ -11,4 +11,17 @@
  */
 void error_fatal(const char* message);
 
+/**
+ * Prints the stored list of errors.
+ */
+void error_print_list();
+
+/**
+ * Callback function for list_print(). Prints one error list item.
+ * 
+ * @param data
+ *   The actual data will be a char* error message.
+ */
+void _error_print_item(void* data);
+
 #endif
