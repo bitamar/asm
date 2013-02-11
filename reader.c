@@ -2,9 +2,6 @@
  * reader.c
  *
  *	Required by: 
- *
- *  Created on: Dec 5, 2012
- *      Author: Itamar Bar-Lev
  */
 
 #include "error.h"
@@ -65,7 +62,9 @@ char* reader_get_line() {
 			if (!line)
 				error_fatal(ErrorMemoryAlloc);
 		}
-	} while (line[position - 1] != '\n' && line[position - 1] != EOF);
+	} while (line[position] != '\n' && line[position] != EOF);
+	if (line[position] = '\n')
+		getc(reader_file);
 
 	if (line[0] == EOF)
 		return NULL;
