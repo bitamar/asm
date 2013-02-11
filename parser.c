@@ -1,9 +1,12 @@
 #include "error.h"
+#include "list.h"
 #include "parser.h"
 #include "reader.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+List parser_symbols_list;
 
 void parser_parse() {
 	const struct instructions instruction_list[] = {
@@ -26,30 +29,36 @@ void parser_parse() {
 	};
 	
 	char* line;
-	char label[MAX_LABEL_SIZE + 1];
+	char* label;
 	int ic = 0, dc = 0, line_length, line_num = 0, line_num_ofset = 0;
 	
 	
 	while ((line = reader_get_line())) {
 		line_num++;
 		line_length=strlen(line);
-		strcpy(label,parser_get_label(line));
-		printf("\n%s\n%s\n", label, line);
-		
-		
+		label = parser_get_label(line);
+		printf("%s\n", label);
+		free(label);
 		free(line);
 	}
 }
 
 char* parser_get_label(const char* line) {
 	int len = 0;
-	char label[MAX_LABEL_SIZE + 1];
-	char* c = line;
+	char* label;
+	const char* c = line;
+	
+	label = (char*)malloc(MAX_LABEL_SIZE + 1);
+	if (!label) 
+		error_fatal(ErrorMemoryAlloc);
 	
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
-	if (!(*c >= 'a' && *c <= 'z') && !(*c >= 'A' && *c <= 'Z'))
+	if (!(*c >= 'a' && *c <= 'z') && !(*c >= 'A' && *c <= 'Z')) {
+		free(label);
 		return NULL;
+	}
+		
 
 	while(((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z')) && len <= MAX_LABEL_SIZE + 1) {
 		c++;
@@ -62,5 +71,6 @@ char* parser_get_label(const char* line) {
 		return label;
 	}
 	
+	free(label);
 	return NULL;
 }

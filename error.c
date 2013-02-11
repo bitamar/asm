@@ -7,7 +7,7 @@
 /**
  * List of errors found while parsing files.
  */
-List* error_list;
+List error_list;
 
 /**
  * Prints an error message and terminates the program.

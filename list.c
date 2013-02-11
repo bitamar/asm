@@ -2,18 +2,14 @@
 #include "list.h"
 #include <stdlib.h>
 
-List* list_append(List* list, void* data) {
-	/* Create a new node. */
+List list_append(List list, void* data) {
 	ListNodePtr node, p;
-	node = (ListNodePtr)malloc(sizeof(ListNode));
-	if (!node)
-		error_fatal(ErrorMemoryAlloc);
-	node->data = data;
+	
+	node = _list_create_node(data);
 
 	p = list;
-	
-	if (!p)
-		/* Empty list; The head */
+	if (!list)
+		/* Empty list; Let the new node be its head. */
 		list = node;
 	else {
 		/* The list is not empty; Find the tail. */	
@@ -26,7 +22,35 @@ List* list_append(List* list, void* data) {
 	return list;
 }
 
-void list_print(List* list, void(*_print)(void*)) {
+List list_add_ordered(List list, void* data, int(*_cmp)(void*, void*)) {
+	ListNodePtr node, p, tmp, prev;
+	
+	node = _list_create_node(data);
+
+	p = list;
+	if (!list)
+		/* Empty list; Let the new node be its head. */
+		list = node;
+	else {
+		/* The list is not empty; Find the first node which is "larger" then 
+		 * the new node according to _cmp. */	
+		while (p->next && _cmp(data, p->data) < 0) {
+			prev = p;
+			p = p->next;
+		}
+		/* Attach the new node. */
+		node->next = p;
+		if (!prev)
+			/* There's one node and the new node needs to be prepended. */
+			list = node;
+		else
+			prev->next = node;
+	}
+	
+	return list;	
+} 
+
+void list_print(List list, void(*_print)(void*)) {
 	ListNodePtr p = list;
 	
 	if (!list)
@@ -38,7 +62,7 @@ void list_print(List* list, void(*_print)(void*)) {
 	} while(p = p->next);
 }
 
-void list_destruct(List* list) {
+void list_destruct(List list) {
 	ListNodePtr p = list, tmp;
 	
 	if (!list)
@@ -52,4 +76,14 @@ void list_destruct(List* list) {
 		free(p->data);
 		free(p);
 	} while((p = tmp));
+}
+
+ListNodePtr _list_create_node(void* data) {
+	ListNodePtr node;
+	
+	node = (ListNodePtr)malloc(sizeof(ListNode));
+	if (!node)
+		error_fatal(ErrorMemoryAlloc);
+	node->data = data;
+	return node;
 }
