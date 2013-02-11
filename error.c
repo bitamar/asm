@@ -34,3 +34,7 @@ void error_print_list() {
 void _error_print_item(void* data) {
 	fprintf(stderr, "Error: %s\n", (char*)data);
 }
+
+void error_destruct() {
+	list_destruct(error_list);
+}

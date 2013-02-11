@@ -17,6 +17,11 @@ void error_fatal(const char* message);
 void error_print_list();
 
 /**
+ * Destructor: Frees the error list.
+ */
+void error_destruct();
+
+/**
  * Callback function for list_print(). Prints one error list item.
  * 
  * @param data

@@ -29,11 +29,28 @@ List* list_append(List* list, void* data) {
 
 void list_print(List* list, void(*_print)(void*)) {
 	ListNodePtr p = list;
-	if (!p)
+	
+	if (!list)
 		return;
 	
 	/* Iterate the list calling _print for each node. */
 	do {		
 		_print(p->data);
 	} while(p = p->next);
+}
+
+void list_destruct(List* list) {
+	ListNodePtr p = list, tmp;
+	
+	if (!list)
+		return;
+	
+	/* Iterate the list calling _free_data for each node. */
+	do {
+		/* Store the next node aside, to be able to free the current node. */
+		tmp = p->next;
+		/* Free the node's data and then the node itself. */
+		free(p->data);
+		free(p);
+	} while((p = tmp));
 }

@@ -28,6 +28,14 @@ List* list_append(List* list, void* data);
  * @param list
  *   The list head.
  * @param _print
- *   Callback function for printing a node.
+ *   Callback function for printing node's data.
  */
 void list_print(List* list, void(*_print)(void*));
+
+/**
+ * Free all the nodes and data from a list.
+ * 
+ * @param list
+ *   The list head.
+ */
+void list_destruct(List* list);
