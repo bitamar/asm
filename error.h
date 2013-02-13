@@ -1,6 +1,8 @@
 #ifndef _ERROR_H
 #define _ERROR_H
 
+#define ErrorMessageMaxSize 100
+
 #define ErrorTitle "Error:"
 #define ErrorMissingArgument "Missing argument."
 #define ErrorCantRead "Could not open file %s for reading."

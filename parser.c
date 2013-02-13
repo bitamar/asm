@@ -9,7 +9,7 @@
 List parser_symbols_list;
 
 void parser_parse() {
-	const struct instructions instruction_list[] = {
+	const Instruction instruction_list[] = {
 		{0, 2, "mov"},
 		{1, 2, "cmp"},
 		{2, 2, "add"},
@@ -29,12 +29,13 @@ void parser_parse() {
 	};
 	
 	char* line;
-	char* label;
+	Label* label;
 	char *begin_of_word,*end_of_word;
 	int ic = 0, dc = 0, line_length, line_num = 0, line_num_ofset = 0,i;
-	
+	char error_message[ErrorMessageMaxSize];
 	
 	while ((line = reader_get_line())) {
+		label = (Label*)malloc(sizeof(Label));
 		line_num++;
 		
 		/* this is for remark line */
@@ -42,17 +43,23 @@ void parser_parse() {
 			continue;
 
 		line_length=strlen(line);
-		label = parser_get_label(line);
+		label->label = parser_get_label(line);
+		label->line = line_num;
 		
 		begin_of_word=line;
-		/* begin_of_word points to first char after label */
-		if (label)
-			begin_of_word=line+strlen(label)+1; 
+		
+		if (label->label) {
+			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels);
+			/* begin_of_word points to first char after label */
+			begin_of_word=line+strlen(label->label)+1; 
+		}
+		else
+			free(label);
 
 		while (*begin_of_word==' ' || *begin_of_word=='\t')
 			begin_of_word++;
 		/* this is an empty line */
-		if (*begin_of_word=='\0' && !label) 
+		if (*begin_of_word=='\0' && !label->label) 
 			continue;
 		
 		line_num_ofset++;		
@@ -64,21 +71,7 @@ void parser_parse() {
 		
 		/* this is a data line */
 		if (!strncmp(begin_of_word,".data",end_of_word-begin_of_word-1) && *end_of_word!='/') {
-
-			printf("\nthis is a data line\n");
-
-	/*		while (*end_of_word!='\0') {
-				while (*end_of_word=' ' or *end_of_word='\t')
-					end_of_word++;
-				begin_of_word=end_of_word;
-
-				if (*begin_of_word='\0')
-					continue;
-
-				while (*end_of_word!=' ' && *end_of_word!='\t' && *end_of_word!='\0' *end_of_word!=',')
-					end_of_word++; */
-				
-				
+			/*printf("\nthis is a data line\n");*/
 			continue;
 		}
 
@@ -87,44 +80,48 @@ void parser_parse() {
 			
 			begin_of_word=end_of_word;
 
-			while (*begin_of_word==' ' || *begin_of_word=='\t')
+			while (*begin_of_word == ' ' || *begin_of_word == '\t')
 				begin_of_word++;
 
 			if (*begin_of_word!='"') {
-				printf ("\n%d error, string expected after .string\n",line_num);
+				sprintf(error_message, "%d error, string expected after .string", line_num);
+				error_set(error_message);
 				continue;
 			}
 			
-			end_of_word=begin_of_word+1;
-			while (*end_of_word!=' ' && *end_of_word!='\t' && *end_of_word!='\0')
+			end_of_word = begin_of_word + 1;
+			while (*end_of_word != ' ' && *end_of_word != '\t' && *end_of_word != '\0')
 				end_of_word++;
-			if (*(end_of_word-1)!='"') {
-				printf ("\n%d error, string expected after .string\n",line_num);
+			
+			if (*(end_of_word-1) != '"') {
+				sprintf(error_message, "%d error, string expected after .string", line_num);
+				error_set(error_message);
 				continue;
 			}
 
-			printf("\nthis is a string line, the string is %s\n",begin_of_word);
+			/*printf("\nthis is a string line, the string is %s\n",begin_of_word);*/
 
-			while (*end_of_word==' ' || *end_of_word=='\t' && *end_of_word!='\0')
+			while (*end_of_word == ' ' || *end_of_word == '\t' && *end_of_word != '\0')
 				end_of_word++;	
 
-			if (*end_of_word!='\0')	
+			if (*end_of_word != '\0')	
 				printf("%d worning, additional unused charecters at end of line",line_num);
 			continue;
 		}
 		
-		for (i=0;i<16 && strncmp(begin_of_word,instruction_list[i].instruction,end_of_word-begin_of_word-1);i++);
-		if (i==16) {
-			printf("\nerror in line %d unknown instruction\n",line_num);
+		for (i = 0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word - 1); i++);
+		if (i == 16) {
+			sprintf(error_message, "\nerror in line %d unknown instruction\n", line_num);
+			error_set(error_message);
 			continue;
 		}
-	
-				
-
-		printf("\n%d label is %s command is %s line is %s\n",line_num, label,instruction_list[i].instruction,line);
-		free(label);
+	   
+		/*printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);*/
 		free(line);
 	}
+	
+	/*error_print_list();
+	list_print(parser_symbols_list, &_parser_print_label);*/
 }
 
 char* parser_get_label(const char* line) {
@@ -158,4 +155,15 @@ char* parser_get_label(const char* line) {
 	
 	free(label);
 	return NULL;
+}
+
+int _parser_compare_labels(void* a, void* b) {
+	Label* label = a;
+	Label* label2 = b;
+	return strcmp(label->label, label2->label);
+}
+
+void _parser_print_label(void* data) {
+	Label* label = data;
+	printf("%d: %s\n", label->line, label->label);
 }
