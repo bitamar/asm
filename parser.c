@@ -36,26 +36,29 @@ void parser_parse() {
 	
 	while ((line = reader_get_line())) {
 		line_num++;
-
-		if (*line==';') //this is for remark line
+		
+		/* this is for remark line */
+		if (*line==';') 
 			continue;
 
 		line_length=strlen(line);
 		label = parser_get_label(line);
-
+		
 		begin_of_word=line;
+		/* begin_of_word points to first char after label */
 		if (label)
-			begin_of_word=line+strlen(label)+1; //begin_of_word points to first char after label
+			begin_of_word=line+strlen(label)+1; 
 
 		while (*begin_of_word==' ' || *begin_of_word=='\t')
 			begin_of_word++;
-
-		if (*begin_of_word=='\0' && !label) //this is an empty line
+		/* this is an empty line */
+		if (*begin_of_word=='\0' && !label) 
 			continue;
 		
 		line_num_ofset++;		
 
-		end_of_word=begin_of_word+1;//find end of command
+		/* find end of command */
+		end_of_word=begin_of_word+1;
 		while (*end_of_word!=' ' && *end_of_word!='\t' && *end_of_word!='/' && *end_of_word!='\0')
 			end_of_word++;
 		

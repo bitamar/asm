@@ -62,12 +62,12 @@ char* reader_get_line() {
 			if (!line)
 				error_fatal(ErrorMemoryAlloc);
 		}
-	} while (line[position] != '\n' && line[position] != EOF);
-	if (line[position] = '\n')
-		getc(reader_file);
+	} while (line[position - 1] != '\n' && line[position - 1] != EOF);
 
-	if (line[0] == EOF)
+	if (line[0] == EOF) {
+		free(line);
 		return NULL;
+	}
 
 	line[position - 1] = '\0';
 	return line;
