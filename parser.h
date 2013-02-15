@@ -9,6 +9,11 @@
 #define PARSER_H_
 
 #define MAX_LABEL_SIZE 30
+/* =2^19-1 */
+#define MAX_DATA_NUMBER 524287 
+/* =2^20-2^19 */
+#define MIN_DATA_NUMBER -524288 
+
 
 /**
  *  Assembler instruction set.
