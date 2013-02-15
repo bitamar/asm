@@ -32,7 +32,7 @@ void parser_parse() {
 	char* line;
 	Label* label;
 	char *begin_of_word,*end_of_word;
-	int ic = 0, dc = 0, line_length, line_num = 0, line_num_ofset = 0,i,num_of_param,num_of_comma;
+	int ic = 0, dc = 0, line_length, line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
 	char error_message[ErrorMessageMaxSize];
 	long data_number;
 	
@@ -91,7 +91,7 @@ void parser_parse() {
 				if (*begin_of_word == '\0')
 					continue;
 
-				if (*begin_of_word!='-' && *begin_of_word!='+' && !isdigit(*begin_of_word)) {
+				if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
 					printf("\n%d data line contain ilegal number", line_num);
 					break;
 				}
@@ -208,14 +208,14 @@ void parser_parse() {
 				end_of_word--;
 			while (	((*end_of_word >= 'a' && *end_of_word <= 'z') || (*end_of_word >= 'A' && *end_of_word <= 'Z') || (*end_of_word >= '0' && *end_of_word <= '9')))
 				end_of_word--; 
-			if (end_of_word>begin_of_word) {
+			if (end_of_word > begin_of_word) {
 				sprintf (error_message, "\n%d error, label expected after .extern", line_num);
 				error_set(error_message);
 				continue;
 			}
 
-			printf("\nthis is an extern line, the extern label is %s\n",begin_of_word);
-				continue;
+			printf("\nthis is an extern line, the extern label is %s\n", begin_of_word);
+			continue;
 		}
 		
 		for (i=0;i<16 && strncmp(begin_of_word,instruction_list[i].instruction,end_of_word-begin_of_word);i++);
@@ -225,12 +225,12 @@ void parser_parse() {
 			continue;
 		}
 	   
-		printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);
+		/*printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);*/
 		free(line);
 	}
 	
-	/*error_print_list();
-	list_print(parser_symbols_list, &_parser_print_label);*/
+	/*error_print_list();*/
+	list_print(parser_symbols_list, &_parser_print_label);
 }
 
 char* parser_get_label(const char* line) {
@@ -249,7 +249,6 @@ char* parser_get_label(const char* line) {
 		return NULL;
 	}
 		
-
 	while(((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || 
 		(*c >= '0' && *c <= '9')) && len <= MAX_LABEL_SIZE + 1) {
 		c++;
