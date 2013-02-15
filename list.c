@@ -23,18 +23,17 @@ List list_append(List list, void* data) {
 }
 
 List list_add_ordered(List list, void* data, int(*_cmp)(void*, void*)) {
-	ListNodePtr node, p, tmp, prev;
+	ListNodePtr node, p = list, prev = NULL;
 	
 	node = _list_create_node(data);
 
-	p = list;
 	if (!list)
 		/* Empty list; Let the new node be its head. */
 		list = node;
 	else {
 		/* The list is not empty; Find the first node which is "larger" then 
 		 * the new node according to _cmp. */	
-		while (p->next && _cmp(data, p->data) < 0) {
+		while (p->next && _cmp(data, p->data) > 0) {
 			prev = p;
 			p = p->next;
 		}
