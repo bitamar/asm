@@ -229,14 +229,14 @@ void parser_parse() {
 			continue;
 		}
 		
-		for (i=0; i<16 && strncmp(begin_of_word,instruction_list[i].instruction,end_of_word-begin_of_word);i++);
-		if (i==16) {
-			sprintf(error_message, "\nerror in line %d unknown instruction\n", line_num);
+		for (i=0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
+		if (i == 16) {
+			sprintf(error_message, "error in line %d unknown instruction", line_num);
 			error_set(error_message);
 			continue;
 		}
 	   
-		printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);
+		printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
 		free(line);
 	}
 	
@@ -255,13 +255,12 @@ char* parser_get_label(const char* line) {
 	
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
-	if (!(*c >= 'a' && *c <= 'z') && !(*c >= 'A' && *c <= 'Z')) {
+	if (!isalpha(*c)) {
 		free(label);
 		return NULL;
 	}
 		
-	while(((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || 
-		(*c >= '0' && *c <= '9')) && len <= MAX_LABEL_SIZE + 1) {
+	while(isalnum(*c) && len <= MAX_LABEL_SIZE + 1) {
 		c++;
 		len++;
 	}
