@@ -13,10 +13,10 @@ List list_append(List list, void* data) {
 		list = node;
 	else {
 		/* The list is not empty; Find the tail. */	
-		while (p->next) 
+		while (p->next)
 			p = p->next;
 		
-		p = node;
+		p->next = node;
 	}
 	
 	return list;
