@@ -59,7 +59,7 @@ void parser_parse() {
 		else
 			free(label);
 
-		while (*begin_of_word == ' ' || *begin_of_word == '\t')
+		while (isblank(*begin_of_word))
 			begin_of_word++;
 		/* this is an empty line */
 		if (*begin_of_word == '\0' && !label->label) 
@@ -68,8 +68,8 @@ void parser_parse() {
 		line_num_ofset++;		
 
 		/* find end of command */
-		end_of_word=begin_of_word + 1;
-		while (*end_of_word != ' ' && *end_of_word != '\t' && *end_of_word != '/' && *end_of_word != '\0')
+		end_of_word = begin_of_word + 1;
+		while (!isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
 		
 		/* this is a data line */
@@ -79,20 +79,22 @@ void parser_parse() {
 			printf("\nthis is a data line\n");
 
 			if (*end_of_word == '\0') 
-					printf("\n%d warning .data line contains no data", line_num);
+				printf("\n%d warning .data line contains no data", line_num);
 
 			while (*end_of_word != '\0') {
-				while (*end_of_word == ' ' || *end_of_word == '\t')
+				while (isblank(*end_of_word))
 					end_of_word++;
 				begin_of_word = end_of_word;
 		
 				if (*begin_of_word == '\0' && num_of_param == 0) 
 					printf("\n%d warning .data line contain no data", line_num);
+				
 				if (*begin_of_word == '\0')
 					continue;
 
 				if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
-					printf("\n%d data line contain ilegal number", line_num);
+					sprintf(error_message, "%d data line contain illegal number", line_num);
+					error_set(error_message);
 					break;
 				}
 
@@ -101,15 +103,18 @@ void parser_parse() {
 				if (isdigit(*begin_of_word))
 					data_number = *begin_of_word - '0';
 
-				while (*end_of_word != ' ' && *end_of_word != '\t' && *end_of_word != '\0' && *end_of_word != ',') {
+				while (!isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
 					if (!isdigit(*end_of_word)) {
-						printf("\n%d data line contain ilegal number", line_num);
+						sprintf(error_message, "%d data line contain illegal number", line_num);
+						error_set(error_message);
 						continue;
 					}
 					else {
+						/* @TODO: Explain. */
 						data_number = 10 * data_number + *end_of_word - '0';
 						if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
-							printf("\n%d number out of limit", line_num);
+							sprintf(error_message, "%d number out of limit", line_num);
+							error_set(error_message);
 							break;
 						}
 					}
@@ -117,13 +122,14 @@ void parser_parse() {
 				}
 
 				if (*begin_of_word == '-')
-					data_number = -1 * data_number;
+					data_number *= -1;
 
 				num_of_param++;
 				printf("\n data is %ld\n", data_number);
 			
-				while (*end_of_word == ' ' || *end_of_word == '\t')
+				while (isblank(*end_of_word))
 					end_of_word++;
+				
 				if (*end_of_word == ',') {
 					end_of_word++;
 					num_of_comma++;
@@ -139,7 +145,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 
-			while (*begin_of_word == ' ' || *begin_of_word == '\t')
+			while (isblank(*begin_of_word))
 				begin_of_word++;
 
 			if (*begin_of_word != '"') {
@@ -149,8 +155,9 @@ void parser_parse() {
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (*end_of_word == ' ' || *end_of_word == '\t')
+			while (isblank(*end_of_word))
 				end_of_word--;
+			
 			if (*(end_of_word) != '"' || end_of_word == begin_of_word) {
 				sprintf (error_message, "%d error, string expected after .string", line_num);
 				error_set(error_message);
@@ -165,20 +172,22 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
 			begin_of_word=end_of_word;
 
-			while (*begin_of_word == ' ' || *begin_of_word == '\t')
+			while (isblank(*begin_of_word))
 				begin_of_word++;
 
-			if (!(*begin_of_word >= 'a' && *begin_of_word <= 'z') && !(*begin_of_word >= 'A' && *begin_of_word <= 'Z') ) {
+			if (!isalpha(*begin_of_word)) {
 				sprintf (error_message, "%d: Not a legal label", line_num);
 				error_set(error_message);
 				continue;
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (*end_of_word == ' ' || *end_of_word == '\t')
+			while (isblank(*end_of_word))
 				end_of_word--;
-			while (	((*end_of_word >= 'a' && *end_of_word <= 'z') || (*end_of_word >= 'A' && *end_of_word <= 'Z') || (*end_of_word >= '0' && *end_of_word <= '9')))
+			
+			while (isalnum(*end_of_word))
 				end_of_word--; 
+			
 			if (end_of_word > begin_of_word) {
 				sprintf (error_message, "%d: Label expected after .entry", line_num);
 				error_set(error_message);
@@ -194,22 +203,24 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 
-			while (*begin_of_word == ' ' || *begin_of_word == '\t')
+			while (isblank(*begin_of_word))
 				begin_of_word++;
 
-			if (!(*begin_of_word >= 'a' && *begin_of_word <= 'z') && !(*begin_of_word >= 'A' && *begin_of_word <= 'Z')) {
-				sprintf (error_message, "\n%d error, not a legal label\n", line_num);
+			if (!isalpha(*begin_of_word)) {
+				sprintf (error_message, "%d error, not a legal label", line_num);
 				error_set(error_message);
 				continue;
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (*end_of_word == ' ' || *end_of_word == '\t')
+			while (isblank(*end_of_word))
 				end_of_word--;
-			while (	((*end_of_word >= 'a' && *end_of_word <= 'z') || (*end_of_word >= 'A' && *end_of_word <= 'Z') || (*end_of_word >= '0' && *end_of_word <= '9')))
+			
+			while (isalnum(*end_of_word))
 				end_of_word--; 
+			
 			if (end_of_word > begin_of_word) {
-				sprintf (error_message, "\n%d error, label expected after .extern", line_num);
+				sprintf (error_message, "%d error, label expected after .extern", line_num);
 				error_set(error_message);
 				continue;
 			}
@@ -218,19 +229,19 @@ void parser_parse() {
 			continue;
 		}
 		
-		for (i=0;i<16 && strncmp(begin_of_word,instruction_list[i].instruction,end_of_word-begin_of_word);i++);
+		for (i=0; i<16 && strncmp(begin_of_word,instruction_list[i].instruction,end_of_word-begin_of_word);i++);
 		if (i==16) {
 			sprintf(error_message, "\nerror in line %d unknown instruction\n", line_num);
 			error_set(error_message);
 			continue;
 		}
 	   
-		/*printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);*/
+		printf("\n%d label is %s command is %s line is %s\n",line_num, label->label, instruction_list[i].instruction, line);
 		free(line);
 	}
 	
 	/*error_print_list();*/
-	list_print(parser_symbols_list, &_parser_print_label);
+	/*list_print(parser_symbols_list, &_parser_print_label);*/
 }
 
 char* parser_get_label(const char* line) {
