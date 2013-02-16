@@ -14,6 +14,14 @@
 void error_fatal(const char* message);
 
 /**
+ * Adds an error to the errors list.
+ * 
+ * @param message
+ *   Error message
+ */
+void error_set(const char* message);
+
+/**
  * Prints the stored list of errors.
  */
 void error_print_list();

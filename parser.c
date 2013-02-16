@@ -2,6 +2,7 @@
 #include "list.h"
 #include "parser.h"
 #include "reader.h"
+#include "char.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +33,7 @@ void parser_parse() {
 	char* line;
 	Label* label;
 	char *begin_of_word,*end_of_word;
-	int ic = 0, dc = 0, line_length, line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
+	int line_length, line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
 	char error_message[ErrorMessageMaxSize];
 	long data_number;
 	
@@ -59,7 +60,7 @@ void parser_parse() {
 		else
 			free(label);
 
-		while (isblank(*begin_of_word))
+		while (char_isblank(*begin_of_word))
 			begin_of_word++;
 		/* this is an empty line */
 		if (*begin_of_word == '\0' && !label->label) 
@@ -69,7 +70,7 @@ void parser_parse() {
 
 		/* find end of command */
 		end_of_word = begin_of_word + 1;
-		while (!isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
+		while (!char_isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
 		
 		/* this is a data line */
@@ -82,7 +83,7 @@ void parser_parse() {
 				printf("\n%d warning .data line contains no data", line_num);
 
 			while (*end_of_word != '\0') {
-				while (isblank(*end_of_word))
+				while (char_isblank(*end_of_word))
 					end_of_word++;
 				begin_of_word = end_of_word;
 		
@@ -103,7 +104,7 @@ void parser_parse() {
 				if (isdigit(*begin_of_word))
 					data_number = *begin_of_word - '0';
 
-				while (!isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
+				while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
 					if (!isdigit(*end_of_word)) {
 						sprintf(error_message, "%d data line contain illegal number", line_num);
 						error_set(error_message);
@@ -127,7 +128,7 @@ void parser_parse() {
 				num_of_param++;
 				printf("\n data is %ld\n", data_number);
 			
-				while (isblank(*end_of_word))
+				while (char_isblank(*end_of_word))
 					end_of_word++;
 				
 				if (*end_of_word == ',') {
@@ -145,7 +146,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 
-			while (isblank(*begin_of_word))
+			while (char_isblank(*begin_of_word))
 				begin_of_word++;
 
 			if (*begin_of_word != '"') {
@@ -155,7 +156,7 @@ void parser_parse() {
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (isblank(*end_of_word))
+			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
 			if (*(end_of_word) != '"' || end_of_word == begin_of_word) {
@@ -172,7 +173,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
 			begin_of_word=end_of_word;
 
-			while (isblank(*begin_of_word))
+			while (char_isblank(*begin_of_word))
 				begin_of_word++;
 
 			if (!isalpha(*begin_of_word)) {
@@ -182,7 +183,7 @@ void parser_parse() {
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (isblank(*end_of_word))
+			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
 			while (isalnum(*end_of_word))
@@ -203,7 +204,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 
-			while (isblank(*begin_of_word))
+			while (char_isblank(*begin_of_word))
 				begin_of_word++;
 
 			if (!isalpha(*begin_of_word)) {
@@ -213,7 +214,7 @@ void parser_parse() {
 			}
 			
 			end_of_word = line + line_length - 1;
-			while (isblank(*end_of_word))
+			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
 			while (isalnum(*end_of_word))

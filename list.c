@@ -58,7 +58,7 @@ void list_print(List list, void(*_print)(void*)) {
 	/* Iterate the list calling _print for each node. */
 	do {		
 		_print(p->data);
-	} while(p = p->next);
+	} while((p = p->next));
 }
 
 void list_destruct(List list) {
