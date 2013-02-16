@@ -59,6 +59,15 @@ char* parser_get_label(const char* line);
 int _parser_compare_labels(void* a, void* b);
 
 /**
+ * Callback function for list_add_ordered(); Issues error message when a 
+ * duplicated label is declared.
+ *  
+ * @param data
+ *   Pointer to Label.
+ */
+void _parser_duplicated_label(void* data);
+
+/**
  * Callback function for list_print(). Prints one label list item.
  * 
  * @param data

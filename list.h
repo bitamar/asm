@@ -32,11 +32,14 @@ List list_append(List list, void* data);
  * @param _compare
  *   Pointer to a callback function receiving two data structures and returning
  *   an integer specifying which one of them supposed to be first.
+ * @param _duplicate
+ *   Optional pointer to function that will be triggered if a duplicated
+ *   element will be inserted.
  * 
  * @return 
  *   Pointer to the head of the list.
  */
-List list_add_ordered(List list, void* data, int(*_compare)(void*, void*));
+List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(*_duplicate)(void*));
 
 /**
  * Print a list.

@@ -22,7 +22,7 @@ List list_append(List list, void* data) {
 	return list;
 }
 
-List list_add_ordered(List list, void* data, int(*_compare)(void*, void*)) {
+	List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(*_duplicate)(void*)) {
 	ListNodePtr node, p = list, prev = NULL;
 	int diff;
 	

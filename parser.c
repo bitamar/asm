@@ -32,7 +32,7 @@ void parser_parse() {
 	
 	char* line;
 	Label* label;
-	char *begin_of_word,*end_of_word;
+	char *begin_of_word, *end_of_word;
 	int line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
 	char error_message[ErrorMessageMaxSize];
 	long data_number;
@@ -42,17 +42,17 @@ void parser_parse() {
 		line_num++;
 		
 		/* this is for remark line */
-		if (*line==';') 
+		if (*line == ';') 
 			continue;
 
 		label = (Label*)malloc(sizeof(Label));
 		label->label = parser_get_label(line);
-		label->line = line_num;
+		label->line = line_num_ofset;
 		
 		begin_of_word=line;
 		
 		if (label->label) {
-			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels);
+			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
 			/* begin_of_word points to first char after label */
 			begin_of_word = line + strlen(label->label) + 1; 
 		}
@@ -76,7 +76,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
 			num_of_param = 0;
 			num_of_comma = 0;
-			printf("\nthis is a data line\n");
+			/*printf("\nthis is a data line\n");*/
 
 			if (*end_of_word == '\0') 
 				printf("\n%d warning .data line contains no data", line_num);
@@ -129,9 +129,9 @@ void parser_parse() {
 
 				num_of_param++;
 
-				if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
-				printf("\n data is %ld\n", data_number);
-			
+				/*if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
+					printf("\n data is %ld\n", data_number);
+					*/
 				while (char_isblank(*end_of_word))
 					end_of_word++;
 				
@@ -169,7 +169,7 @@ void parser_parse() {
 				continue;
 			}
 
-			printf("\nthis is a string line, the string is %s\n", begin_of_word);
+		/*	printf("\nthis is a string line, the string is %s\n", begin_of_word);*/
 			continue;
 		}
 		
@@ -267,22 +267,14 @@ void parser_parse() {
  				continue;
 			}
 		}
-		
-/*		if (*end_of_word!='\0') {
-			end_of_word++;
-			find_next_non_blank_char(end_of_word);
-			if (*end_of_word!='0' && *end_of_word!='1')	{
-				printf("%d error, type epxpected after instruction",line_num);
- 				continue;
-			}
-		} */
 	   
-		printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
+		/*printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
+		 */
 		free(line);
 	}
 	
 	/*error_print_list();*/
-	/*list_print(parser_symbols_list, &_parser_print_label);*/
+	list_print(parser_symbols_list, &_parser_print_label);
 }
 
 char* parser_get_label(const char* line) {
@@ -301,7 +293,7 @@ char* parser_get_label(const char* line) {
 		return NULL;
 	}
 		
-	while(isalnum(*c) && len <= MAX_LABEL_SIZE + 1) {
+	while(isalnum(*c) && len < MAX_LABEL_SIZE) {
 		c++;
 		len++;
 	}
@@ -311,9 +303,8 @@ char* parser_get_label(const char* line) {
 		label[len] = '\0';
 
 		/* check if label name is register name*/
-		if ((strlen(label)==2 && label[0]=='r' && (label[1]-'0')>=0 && (label[1]-'0')<=7) || 
-		!strcmp(label,"PC") || !strcmp(label,"SP") || !strcmp(label,"PSW")) {
-			printf("\n%s is ilegal label name, same as register\n",label);
+		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
+			printf("%s is ilegal label name, same as register", label);
 			return NULL;
 		} 
 
@@ -328,6 +319,11 @@ int _parser_compare_labels(void* a, void* b) {
 	Label* label = a;
 	Label* label2 = b;
 	return strcmp(label->label, label2->label);
+}
+
+void _parser_duplicated_label(void* data) {
+	Label* label = data;
+	fprintf(stderr, "Trying to redeclre label: %s.", label->label);
 }
 
 void _parser_print_label(void* data) {
