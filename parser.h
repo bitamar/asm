@@ -14,7 +14,6 @@
 /* =2^20-2^19 */
 #define MIN_DATA_NUMBER -524288 
 
-
 /**
  *  Assembler instruction set.
  */

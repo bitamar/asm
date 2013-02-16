@@ -16,4 +16,6 @@
  */
 #define char_isblank(c) ((c) == ' ' || (c) == '\t')
 
+#define find_next_non_blank_char(x) while (char_isblank(*(x))) (x)++
+
 #endif	/* CHAR_H */

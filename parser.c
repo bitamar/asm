@@ -33,20 +33,19 @@ void parser_parse() {
 	char* line;
 	Label* label;
 	char *begin_of_word,*end_of_word;
-	int line_length, line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
+	int line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
 	char error_message[ErrorMessageMaxSize];
 	long data_number;
 	
 	
-	while ((line = reader_get_line())) {
-		label = (Label*)malloc(sizeof(Label));
+	while ((line = reader_get_line())) {		
 		line_num++;
 		
 		/* this is for remark line */
 		if (*line==';') 
 			continue;
 
-		line_length=strlen(line);
+		label = (Label*)malloc(sizeof(Label));
 		label->label = parser_get_label(line);
 		label->line = line_num;
 		
@@ -115,8 +114,11 @@ void parser_parse() {
 						data_number = 10 * data_number + *end_of_word - '0';
 						if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 							sprintf(error_message, "%d number out of limit", line_num);
+							printf("%d number out of limit", line_num);
+							while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
+								end_of_word++;
 							error_set(error_message);
-							break;
+							continue;
 						}
 					}
 					end_of_word++; 
@@ -126,6 +128,8 @@ void parser_parse() {
 					data_number *= -1;
 
 				num_of_param++;
+
+				if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
 				printf("\n data is %ld\n", data_number);
 			
 				while (char_isblank(*end_of_word))
@@ -155,7 +159,7 @@ void parser_parse() {
 				continue;
 			}
 			
-			end_of_word = line + line_length - 1;
+			end_of_word = line + strlen(line) - 1;
 			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
@@ -182,7 +186,7 @@ void parser_parse() {
 				continue;
 			}
 			
-			end_of_word = line + line_length - 1;
+			end_of_word = line + strlen(line) - 1;
 			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
@@ -200,6 +204,7 @@ void parser_parse() {
 		}
 
 		/* this is an extern label declaration line */
+
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 
@@ -212,7 +217,7 @@ void parser_parse() {
 				continue;
 			}
 			
-			end_of_word = line + line_length - 1;
+			end_of_word = line + strlen(line) - 1;
 			while (char_isblank(*end_of_word))
 				end_of_word--;
 			
@@ -229,12 +234,48 @@ void parser_parse() {
 			continue;
 		}
 		
+		/* this is a command line*/
+		if (strlen(line)>80) {
+			printf("%d error line length exiding 80 char",line_num);
+			continue;
+		}
+
 		for (i=0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
 		if (i == 16) {
 			sprintf(error_message, "error in line %d unknown instruction", line_num);
 			error_set(error_message);
 			continue;
 		}
+
+		/* find '/' */
+		find_next_non_blank_char(end_of_word);
+		if (*end_of_word!='/') {
+			
+			if (i>13 && *end_of_word=='\0') /* no argument is used */
+				printf("%d warning, type epxpected after instruction",line_num);
+			else {
+				printf("%d error, type epxpected after instruction",line_num);
+				continue;
+			}
+		}
+
+		if (*end_of_word!='\0') {
+			end_of_word++;
+			find_next_non_blank_char(end_of_word);
+			if (*end_of_word!='0' && *end_of_word!='1')	{
+				printf("%d error, type epxpected after instruction",line_num);
+ 				continue;
+			}
+		}
+		
+/*		if (*end_of_word!='\0') {
+			end_of_word++;
+			find_next_non_blank_char(end_of_word);
+			if (*end_of_word!='0' && *end_of_word!='1')	{
+				printf("%d error, type epxpected after instruction",line_num);
+ 				continue;
+			}
+		} */
 	   
 		printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
 		free(line);
@@ -268,6 +309,14 @@ char* parser_get_label(const char* line) {
 	if (line[len] == ':') {
 		strncpy(label, line, len);
 		label[len] = '\0';
+
+		/* check if label name is register name*/
+		if ((strlen(label)==2 && label[0]=='r' && (label[1]-'0')>=0 && (label[1]-'0')<=7) || 
+		!strcmp(label,"PC") || !strcmp(label,"SP") || !strcmp(label,"PSW")) {
+			printf("\n%s is ilegal label name, same as register\n",label);
+			return NULL;
+		} 
+
 		return label;
 	}
 	
