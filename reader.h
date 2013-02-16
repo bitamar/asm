@@ -22,6 +22,11 @@ void reader_open_file(const char* file_name);
 void reader_close_file();
 
 /**
+ * Get the currenly open file's name.
+ */
+char* reader_get_file_name();
+
+/**
  * Read the next line from a file.
  * The returned string must be freed by the invoker.
  */

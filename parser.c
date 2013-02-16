@@ -200,7 +200,6 @@ void parser_parse() {
 		}
 
 		/* this is an extern label declaration line */
-
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			begin_of_word = end_of_word;
 

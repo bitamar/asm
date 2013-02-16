@@ -11,6 +11,7 @@
 #include <string.h>
 
 FILE* reader_file;
+char* reader_file_name;
 
 /**
  * Open a file for reading.
@@ -18,24 +19,28 @@ FILE* reader_file;
  */
 void reader_open_file(const char* file_name) {
 	int len;
-	char* full_file_name;
-
+	
 	/* Create a string with the file name and extension. */
 	len = strlen(file_name);
-	full_file_name = (char*) malloc(len + ReaderFileExtensionLength + 1);
-	if (!full_file_name)
+	reader_file_name = (char*)malloc(len + ReaderFileExtensionLength + 1);
+	if (!reader_file_name)
 		error_fatal(ErrorMemoryAlloc);
 
-	strcpy(full_file_name, file_name);
-	full_file_name[len] = '.';
-	strcpy(full_file_name + len + 1, ReaderFileExtension);
-	full_file_name[len + ReaderFileExtensionLength + 1] = '\0';
+	strcpy(reader_file_name, file_name);
+	/* Add the file extension. */
+	reader_file_name[len] = '.';
+	strcpy(reader_file_name + len + 1, ReaderFileExtension);
+	reader_file_name[len + ReaderFileExtensionLength + 1] = '\0';
 
-	reader_file = fopen(full_file_name, "r");
+	reader_file = fopen(reader_file_name, "r");
 	if (!reader_file) {
-		fprintf(stderr, ErrorCantRead, full_file_name);
+		fprintf(stderr, ErrorCantRead, reader_file_name);
 		exit(EXIT_FAILURE);
 	}
+}
+
+char* reader_get_file_name() {
+	return reader_file_name;
 }
 
 /**
