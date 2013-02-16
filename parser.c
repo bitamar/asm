@@ -34,10 +34,8 @@ void parser_parse() {
 	Label* label;
 	char *begin_of_word, *end_of_word;
 	int line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
-	char error_message[ErrorMessageMaxSize];
-	long data_number;
-	
-	
+	long data_number;	
+			
 	while ((line = reader_get_line())) {		
 		line_num++;
 		
@@ -76,7 +74,7 @@ void parser_parse() {
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
 			num_of_param = 0;
 			num_of_comma = 0;
-			/*printf("\nthis is a data line\n");*/
+			printf("\nthis is a data line\n");
 
 			if (*end_of_word == '\0') 
 				printf("\n%d warning .data line contains no data", line_num);
@@ -93,8 +91,7 @@ void parser_parse() {
 					continue;
 
 				if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
-					sprintf(error_message, "%d data line contain illegal number", line_num);
-					error_set(error_message);
+					error_set("data line contain illegal number", line_num);
 					break;
 				}
 
@@ -104,20 +101,18 @@ void parser_parse() {
 					data_number = *begin_of_word - '0';
 
 				while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
-					if (!isdigit(*end_of_word)) {
-						sprintf(error_message, "%d data line contain illegal number", line_num);
-						error_set(error_message);
+					if (!isdigit(*end_of_word)) {						
+						error_set("data line contain illegal number", line_num);;
 						continue;
 					}
 					else {
 						/* @TODO: Explain. */
 						data_number = 10 * data_number + *end_of_word - '0';
 						if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
-							sprintf(error_message, "%d number out of limit", line_num);
-							printf("%d number out of limit", line_num);
+							error_set("number out of limit", line_num);
 							while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
 								end_of_word++;
-							error_set(error_message);
+							
 							continue;
 						}
 					}
@@ -154,8 +149,7 @@ void parser_parse() {
 				begin_of_word++;
 
 			if (*begin_of_word != '"') {
-				sprintf(error_message, "%d error, string expected after .string", line_num);
-				error_set(error_message);
+				error_set("string expected after .string", line_num);
 				continue;
 			}
 			
@@ -164,8 +158,7 @@ void parser_parse() {
 				end_of_word--;
 			
 			if (*(end_of_word) != '"' || end_of_word == begin_of_word) {
-				sprintf (error_message, "%d error, string expected after .string", line_num);
-				error_set(error_message);
+				error_set("string expected after .string", line_num);
 				continue;
 			}
 
@@ -181,8 +174,7 @@ void parser_parse() {
 				begin_of_word++;
 
 			if (!isalpha(*begin_of_word)) {
-				sprintf (error_message, "%d: Not a legal label", line_num);
-				error_set(error_message);
+				error_set("Not a legal label", line_num);
 				continue;
 			}
 			
@@ -194,8 +186,7 @@ void parser_parse() {
 				end_of_word--; 
 			
 			if (end_of_word > begin_of_word) {
-				sprintf (error_message, "%d: Label expected after .entry", line_num);
-				error_set(error_message);
+				error_set("Label expected after .entry", line_num);
 				continue;
 			}
 
@@ -212,8 +203,7 @@ void parser_parse() {
 				begin_of_word++;
 
 			if (!isalpha(*begin_of_word)) {
-				sprintf (error_message, "%d error, not a legal label", line_num);
-				error_set(error_message);
+				error_set("not a legal label", line_num);
 				continue;
 			}
 			
@@ -225,8 +215,7 @@ void parser_parse() {
 				end_of_word--; 
 			
 			if (end_of_word > begin_of_word) {
-				sprintf (error_message, "%d error, label expected after .extern", line_num);
-				error_set(error_message);
+				error_set("label expected after .extern", line_num);
 				continue;
 			}
 
@@ -242,8 +231,7 @@ void parser_parse() {
 
 		for (i=0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
 		if (i == 16) {
-			sprintf(error_message, "error in line %d unknown instruction", line_num);
-			error_set(error_message);
+			error_set("unknown instruction", line_num);
 			continue;
 		}
 
@@ -323,7 +311,8 @@ int _parser_compare_labels(void* a, void* b) {
 
 void _parser_duplicated_label(void* data) {
 	Label* label = data;
-	fprintf(stderr, "Trying to redeclre label: %s.", label->label);
+	
+	error_set("Redeclaring label.", label->line);
 }
 
 void _parser_print_label(void* data) {
