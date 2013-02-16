@@ -22,41 +22,34 @@ List list_append(List list, void* data) {
 	return list;
 }
 
-	List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(*_duplicate)(void*)) {
+List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(*_duplicate)(void*)) {
 	ListNodePtr node, p = list, prev = NULL;
-	int diff;
+	int difference;
 	
 	node = _list_create_node(data);
 
-	if (!list)
-		/* Empty list; Let the new node be its head. */
-		list = node;
-	else {
-		/* The list is not empty; Find the first node which is "larger" then 
-		 * the new node according to _cmp. */	
-		while ((diff = _compare(data, p->data)) > 0 && p->next) {
-			prev = p;
-			p = p->next;
-		}
-		/* Attach the new node. */
+	while(p) {
+		difference = _compare(data, p->data);
+		if(difference < 0)
+			break;
 		
-		if (!prev) {
-			/* There's one node and the new node needs to be prepended. */
-			if (diff > 0) {
-				prev->next = node;
-			}
-			else {
-				node->next = p;
-				list = node;
-			}
-		}
-		else {
-			node->next = p;
-			prev->next = node;
-		}
+		if (_duplicate && !difference)
+			_duplicate(data);
+			
+		prev = p;
+		p = p->next;
 	}
 	
-	return list;	
+	if(!prev) {
+		node->next = list;
+		list = node;
+	}
+	else {
+		prev->next = node;
+		node->next = p;
+	}
+	
+	return list;
 } 
 
 void list_print(List list, void(*_print)(void*)) {
