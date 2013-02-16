@@ -29,14 +29,14 @@ List list_append(List list, void* data);
  *   The list head.
  * @param data
  *   Pointer to the data structure.
- * @param _cmp
+ * @param _compare
  *   Pointer to a callback function receiving two data structures and returning
  *   an integer specifying which one of them supposed to be first.
  * 
  * @return 
  *   Pointer to the head of the list.
  */
-List list_add_ordered(List list, void* data, int(*_cmp)(void*, void*));
+List list_add_ordered(List list, void* data, int(*_compare)(void*, void*));
 
 /**
  * Print a list.
