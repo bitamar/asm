@@ -12,30 +12,32 @@ List parser_symbols_list;
 
 void parser_parse() {
 	const Instruction instruction_list[] = {
-		{0, 2, "mov"},
-		{1, 2, "cmp"},
-		{2, 2, "add"},
-		{3, 2, "sub"},
-		{6, 2, "lea"},
-		{4, 1, "not"},
-		{5, 1, "clr"},
-		{7, 1, "inc"},
-		{8, 1, "dec"},
-		{9, 1, "jmp"},
-		{10, 1, "bne"},
-		{11, 1, "red"},
-		{12, 1, "prn"},
-		{13, 1, "jsr"},
-		{14, 0, "rts"},
-		{15, 0, "stop"}
+		{0, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
+		{1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
+		{2, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "add"},
+		{3, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "sub"},
+		{6, 2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, "lea"},
+		{4, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "not"},
+		{5, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "clr"},
+		{7, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "inc"},
+		{8, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "dec"},
+		{9, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "jmp"},
+		{10, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "bne"},
+		{11, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "red"},
+		{12, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, "prn"},
+		{13, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, "jsr"},
+		{14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
+		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
 	
 	char* line;
 	Label* label;
-	char *begin_of_word, *end_of_word;
-	int line_num = 0, line_num_ofset = 0, i, num_of_param, num_of_comma;
-	long data_number;	
-			
+	char *begin_of_word,*end_of_word,command_type[7],source[80],destination[80];
+	int line_num = 0, line_num_ofset = 0, i,j; 
+	int num_of_param, num_of_comma,first_addressing_type,second_addressing_type;
+	long data_number;
+	
+	
 	while ((line = reader_get_line())) {		
 		line_num++;
 		
@@ -80,8 +82,8 @@ void parser_parse() {
 				printf("\n%d warning .data line contains no data", line_num);
 
 			while (*end_of_word != '\0') {
-				while (char_isblank(*end_of_word))
-					end_of_word++;
+				find_next_non_blank_char(end_of_word);
+
 				begin_of_word = end_of_word;
 		
 				if (*begin_of_word == '\0' && num_of_param == 0) 
@@ -124,9 +126,9 @@ void parser_parse() {
 
 				num_of_param++;
 
-				/*if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
-					printf("\n data is %ld\n", data_number);
-					*/
+				if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
+				printf("\n data is %ld\n", data_number);
+			
 				while (char_isblank(*end_of_word))
 					end_of_word++;
 				
@@ -235,29 +237,92 @@ void parser_parse() {
 			continue;
 		}
 
-		/* find '/' */
+		/* find '/0' or /1 */
 		find_next_non_blank_char(end_of_word);
-		if (*end_of_word!='/') {
+		command_type[0]=*end_of_word;
+		if (*end_of_word!='\0')	{
+			end_of_word++;
+			find_next_non_blank_char(end_of_word);			
+			command_type[1]=*end_of_word;
+			command_type[2]='\0';
+		}
+		if (!(command_type[0]=='/' && (command_type[1]=='0' || command_type[1]=='1'))) {
 			
-			if (i>13 && *end_of_word=='\0') /* no argument is used */
-				printf("%d warning, type epxpected after instruction",line_num);
-			else {
-				printf("%d error, type epxpected after instruction",line_num);
+			printf("\n%d error, type epxpected after instruction\n",line_num);
+			continue;
+		}
+
+		if (*end_of_word!='\0')	
+			end_of_word++;
+
+		if (command_type[1]=='1') {
+			for (j=0;j<4;j++) {
+				find_next_non_blank_char(end_of_word);
+				command_type[2+j]=*end_of_word;
+				command_type[2+j+1]='\0';
+				if (*end_of_word!='\0')	
+					end_of_word++;				
+			}
+
+			if (!(command_type[0]=='/' && command_type[2]=='/' && command_type[4]=='/' && 
+				(command_type[5]=='0' || command_type[5]=='1') && 
+				(command_type[3]=='0' || command_type[3]=='1'))) {
+				printf("\n%d error, ilegal command type\n",line_num);
 				continue;
 			}
 		}
 
-		if (*end_of_word!='\0') {
-			end_of_word++;
-			find_next_non_blank_char(end_of_word);
-			if (*end_of_word!='0' && *end_of_word!='1')	{
-				printf("%d error, type epxpected after instruction",line_num);
- 				continue;
-			}
+		/* verify blank after type */
+		if (!char_isblank(*end_of_word) && *end_of_word!='\0') {
+
+			printf("\n%d error, a blank char is required after instruction\n",line_num);
+			continue;
 		}
-	   
-		/*printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
-		 */
+		
+		find_next_non_blank_char(end_of_word);
+
+		if (*end_of_word=='#') {
+			first_addressing_type=0;
+
+			end_of_word++;
+
+			begin_of_word = end_of_word;
+		
+			if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
+				printf("\n%d error, ilegal opperand, expect number after #\n", line_num);
+				continue;
+			}
+		
+			end_of_word++;
+			data_number = 0;
+			if (isdigit(*begin_of_word))
+				data_number = *begin_of_word - '0';
+		
+			while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
+				if (!isdigit(*end_of_word)) {
+					printf("%d line contain illegal number after #", line_num);
+					continue;
+				}
+				else {
+					
+					data_number = 10 * data_number + *end_of_word - '0';
+					if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
+					printf("%d number out of limit", line_num);
+					while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
+						end_of_word++;
+						continue;
+					}
+				}
+				end_of_word++; 
+			}
+
+				if (*begin_of_word == '-')
+					data_number *= -1;
+		}
+
+
+
+		printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number,line);
 		free(line);
 	}
 	
@@ -291,8 +356,9 @@ char* parser_get_label(const char* line) {
 		label[len] = '\0';
 
 		/* check if label name is register name*/
-		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
-			printf("%s is ilegal label name, same as register", label);
+		if ((strlen(label)==2 && label[0]=='r' && (label[1]-'0')>=0 && (label[1]-'0')<=7) || 
+		!strcmp(label,"PC") || !strcmp(label,"SP") || !strcmp(label,"PSW")) {
+			printf("\n%s is ilegal label name, same as register\n",label);
 			return NULL;
 		} 
 
