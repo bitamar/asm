@@ -53,7 +53,7 @@ void parser_parse();
  * Check whether a line starts with a label.
  * Returns the label as a string. The string must be freed by the invoker.
  */
-char* parser_get_label(const char* line);
+char* parser_get_label(const char* line, int line_num);
 
 /**
  * Callback function for list_add_ordered(); Performs lexicographical comparison 

@@ -7,7 +7,7 @@
 #define ErrorCantRead "Could not open file %s for reading."
 #define ErrorMemoryAlloc "Memory allocation failed."
 
-#define error_set(msg, line) fprintf(stderr, "Error in %s, on line %d: %s\n", reader_get_file_name(), line, msg)
+#define error_set(type, msg, line) fprintf(stderr, "%s in %s, on line %d: %s\n", type, reader_get_file_name(), line, msg)
 
 /**
  * Prints an error message and terminates the program.
