@@ -1,14 +1,19 @@
+#include "char.h"
 #include "error.h"
 #include "list.h"
 #include "parser.h"
 #include "reader.h"
-#include "char.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 List parser_symbols_list;
+
+/**
+ * Holds the parsed data of each line.
+ */
+List parser_lines;
 
 void parser_parse() {
 	const Instruction instruction_list[] = {
@@ -32,6 +37,7 @@ void parser_parse() {
 	
 	char* line;
 	Label* label;
+	LineData* line_data;
 	char *begin_of_word,*end_of_word,command_type[7]; /*,source[80],destination[80];*/
 	int line_num = 0, line_num_ofset = 0, i,j; 
 	int num_of_param, num_of_comma; /*, first_addressing_type, second_addressing_type;*/
@@ -44,8 +50,10 @@ void parser_parse() {
 		/* this is for remark line */
 		if (*line == ';') 
 			continue;
+		
+		line_data = New(LineData);
 
-		label = (Label*)malloc(sizeof(Label));
+		label = New(Label);
 		label->label = parser_get_label(line, line_num);
 		label->line = line_num_ofset;
 		
@@ -139,7 +147,11 @@ void parser_parse() {
 			}
 			if (num_of_comma != num_of_param - 1)
 				error_set("Warning", "Data line contain spare comma at the end.", line_num);
+			
 
+			parser_lines = list_append(parser_lines, line_data);
+			
+			/* Read next line. */
 			continue;
 		}
 
@@ -166,6 +178,9 @@ void parser_parse() {
 			}
 
 		/*	printf("\nthis is a string line, the string is %s\n", begin_of_word);*/
+			parser_lines = list_append(parser_lines, line_data);
+			
+			/* Read next line. */
 			continue;
 		}
 		
@@ -194,6 +209,9 @@ void parser_parse() {
 			}
 
 			printf("this is an entry line, the entry label is %s", begin_of_word);
+			parser_lines = list_append(parser_lines, line_data);
+			
+			/* Read next line. */
 			continue;
 		}
 
@@ -223,6 +241,9 @@ void parser_parse() {
 			}
 
 			printf("\nthis is an extern line, the extern label is %s\n", begin_of_word);
+			parser_lines = list_append(parser_lines, line_data);
+			
+			/* Read next line. */
 			continue;
 		}
 		
@@ -252,15 +273,15 @@ void parser_parse() {
 			continue;
 		}
 
-		if (*end_of_word!='\0')	
+		if (*end_of_word != '\0')	
 			end_of_word++;
 
-		if (command_type[1]=='1') {
-			for (j=0;j<4;j++) {
+		if (command_type[1] == '1') {
+			for (j = 0; j < 4; j++) {
 				find_next_non_blank_char(end_of_word);
-				command_type[2+j]=*end_of_word;
-				command_type[2+j+1]='\0';
-				if (*end_of_word!='\0')	
+				command_type[2 + j] = *end_of_word;
+				command_type[2 + j + 1] = '\0';
+				if (*end_of_word != '\0')	
 					end_of_word++;				
 			}
 
@@ -318,12 +339,11 @@ void parser_parse() {
 				data_number *= -1;
 		}
 
-		printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number,line);
+		/* printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number,line);*/
 		free(line);
 	}
 	
-	/*error_print_list();*/
-	list_print(parser_symbols_list, &_parser_print_label);
+	/* list_print(parser_symbols_list, &_parser_print_label);*/
 }
 
 char* parser_get_label(const char* line, int line_num) {

@@ -8,6 +8,8 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+#define New(type) (type *)malloc(sizeof(type))
+
 #define MAX_LABEL_SIZE 30
 /* =2^19-1 */
 #define MAX_DATA_NUMBER 524287 
@@ -20,18 +22,18 @@
  * source opperand and destination_opperand are 0 if not in use , and 1 if in use
  */
 typedef struct {
-	unsigned int code : 4;
-	unsigned int num_of_args : 2;
-	unsigned int source_imidiat_addressing : 1;
-	unsigned int source_direct_addressing : 1;
-	unsigned int source_index_addressing : 1;
-	unsigned int source_direct_register_addressing : 1;
-	unsigned int destination_imidiat_addressing : 1;
-	unsigned int destination_direct_addressing : 1;
-	unsigned int destination_index_addressing : 1;
-	unsigned int destination_direct_register_addressing : 1;
-	unsigned int source_opperand : 1;
-	unsigned int destination_opperand : 1;
+	unsigned int code :4;
+	unsigned int num_of_args :2;
+	unsigned int source_imidiat_addressing :1;
+	unsigned int source_direct_addressing :1;
+	unsigned int source_index_addressing :1;
+	unsigned int source_direct_register_addressing :1;
+	unsigned int destination_imidiat_addressing :1;
+	unsigned int destination_direct_addressing :1;
+	unsigned int destination_index_addressing :1;
+	unsigned int destination_direct_register_addressing :1;
+	unsigned int source_opperand :1;
+	unsigned int destination_opperand :1;
 	char *instruction;
 } Instruction;
 
@@ -42,6 +44,20 @@ typedef struct {
 	char* label;
 	unsigned int line; 
 } Label;
+
+typedef struct {
+	unsigned int line;
+	char label[MAX_LABEL_SIZE + 1];
+	unsigned int address;
+	char* command;
+	char* operands[2];
+	unsigned int type :1;
+	unsigned int source_half :1;
+	unsigned int destination_half :1;
+	/* Store the 20-bit final mapping in array of two ints, because one int
+	 * is defined to be at least 16 bits. */
+	unsigned int mapping[2];
+} LineData;
 
 /**
  * Does the initial parsing of the assembly file.
