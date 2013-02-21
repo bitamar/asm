@@ -52,10 +52,7 @@ typedef struct {
 } instruction_word; 
 
 typedef struct {
-	/* This is illegal; A bit field must be contained in one int and int is only
-	   promised to be at least 16 bits. So I think we must use array of two ints
-	   for this purpose. */
-	unsigned int data : 20;
+	unsigned long data;
 } data_word;
 
 typedef union { 

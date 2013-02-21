@@ -33,7 +33,7 @@ void parser_parse() {
 		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
 	
-	char* line, first_opperand[MAX_LABEL_SIZE+1], second_opperand[MAX_OPERAND_SIZE];
+	char* line, first_opperand[MAX_LABEL_SIZE+1];
 	Label* label;
 	char *begin_of_word,*end_of_word,command_type[7]; /*,source[80],destination[80];*/
 	int line_num = 0, i,j; 
@@ -224,7 +224,7 @@ void parser_parse() {
 
 			if (*end_of_word=='#')
 				/*addressing is value 0*/
-				data_number=extruct_number(&first_opperand,line_num);
+				data_number=extruct_number(first_opperand,line_num);
 			/* else this is a label or register*/
 			
 			continue;
@@ -451,7 +451,7 @@ int extruct_label(char * begin_of_word,char *end_of_word,int const line_num,char
 	return 0;
 }
 
-long extruct_number(char number[MAX_LABEL_SIZE+1],int const line_num) {
+long extruct_number(char number[MAX_LABEL_SIZE+1], const int line_num) {
 	long data_number;
 	int k=1;
 		
