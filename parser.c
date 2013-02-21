@@ -9,13 +9,11 @@
 #include <string.h>
 
 List parser_symbols_list;
-
-/**
- * Holds the parsed data of each line.
- */
-List parser_lines;
+line_parse line_word[2000];
+int line_num_ofset = LINE_OFSET-1;
 
 void parser_parse() {
+	
 	const Instruction instruction_list[] = {
 		{0, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
 		{1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
@@ -35,16 +33,16 @@ void parser_parse() {
 		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
 	
-	char* line;
+	char* line, first_opperand[MAX_LABEL_SIZE+1], second_opperand[MAX_OPERAND_SIZE];
 	Label* label;
-	LineData* line_data;
 	char *begin_of_word,*end_of_word,command_type[7]; /*,source[80],destination[80];*/
-	int line_num = 0, line_num_ofset = 0, i,j; 
+	int line_num = 0, i,j; 
 	 /*, first_addressing_type, second_addressing_type;*/
 	long data_number;
 	void extruct_data_number(char*,char *,int);
 	int extruct_string(char*,char *,int,char *);
 	int extruct_label(char*,char *,int,char *,char *);
+	long extruct_number(char *,int const);
 
 	while ((line = reader_get_line())) {		
 		line_num++;
@@ -52,10 +50,8 @@ void parser_parse() {
 		/* this is for remark line */
 		if (*line == ';') 
 			continue;
-		
-		line_data = New(LineData);
 
-		label = New(Label);
+		label = (Label*)malloc(sizeof(Label));
 		label->label = parser_get_label(line, line_num);
 		label->line = line_num_ofset;
 		
@@ -76,6 +72,9 @@ void parser_parse() {
 			continue;
 		
 		line_num_ofset++;		
+		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
+		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=0;
+		line_word[line_num_ofset-LINE_OFSET].label_to_extruct=NULL;
 
 		/* find end of command */
 		end_of_word = begin_of_word + 1;
@@ -162,44 +161,90 @@ void parser_parse() {
 			continue;
 		}
 		
+		/* find first opperand */
+
 		find_next_non_blank_char(end_of_word);
 
-		if (*end_of_word == '#') {
-			/*first_addressing_type=0;*/
 
-			end_of_word++;
+		if (*end_of_word=='\0' && (instruction_list[i].source_opperand || 
+		    instruction_list[i].destination_opperand)) {
+			printf("error at line number %d opperand expected after %s",line_num,
+				instruction_list[i].instruction);
+			continue;
+		}
 
-			begin_of_word = end_of_word;
+		if (*end_of_word!='\0' && instruction_list[i].source_opperand==0 && 
+		    instruction_list[i].destination_opperand==0) {
+
+			printf("error at line number %d no opperand expected after %s",line_num,
+				instruction_list[i].instruction);
+			continue;
+		}
+
+		if (*end_of_word=='\0' && instruction_list[i].source_opperand==0 && 
+		    instruction_list[i].destination_opperand==0) {
+			/* a command without oppenrand found */
+			printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, 				        instruction_list[i].instruction, line);
+			continue;
+		}
 		
-			if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
-				error_set("Error", "Illegal operand, expect number after.", line_num);
+		if (*end_of_word!='#' && !isalpha(*end_of_word)) {
+			
+			printf("\nilegal parameter at line%d\n", line_num);
+			continue;
+		}				
+	
+		j=1;
+		while (isalnum(*end_of_word) && j<=MAX_OPERAND_SIZE) {
+			first_opperand[j-1]=*end_of_word;
+			end_of_word++;
+			j++;
+		}
+
+		if (j==MAX_OPERAND_SIZE) {
+			printf("error at line number %d ilegal opperand after %s",line_num,
+				instruction_list[i].instruction);
+			continue;
+		}
+		
+		first_opperand[j-1]='\0';
+		find_next_non_blank_char(end_of_word);
+		if (*end_of_word!='{' && *end_of_word!=',' && *end_of_word!='\0') {
+			
+			printf("\nilegal parameter at line%d\n", line_num);
+			continue;
+		}				
+
+		if (*end_of_word=='\0') {
+			/*there is only one parameter*/
+			if (!(instruction_list[i].source_opperand ^ instruction_list[i].destination_opperand)) {
+				printf("\nincompatble number of parameters %d\n", line_num);
 				continue;
 			}
-		
-			end_of_word++;
-			data_number = 0;
-			if (isdigit(*begin_of_word))
-				data_number = *begin_of_word - '0';
-		
-			while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
-				if (!isdigit(*end_of_word)) {
-					error_set("Error", "Illegal number after #.", line_num);
-					continue;
-				}
-				else {					
-					data_number = 10 * data_number + *end_of_word - '0';
-					if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
-					error_set("Error", "Number out of limit.", line_num);
-					while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
-						end_of_word++;
-						continue;
-					}
-				}
-				end_of_word++; 
-			}
 
-			if (*begin_of_word == '-')
-				data_number *= -1;
+			if (*end_of_word=='#')
+				/*addressing is value 0*/
+				data_number=extruct_number(&first_opperand,line_num);
+			/* else this is a label or register*/
+			
+			continue;
+		}				
+		
+
+		find_next_non_blank_char(end_of_word);
+		if (*end_of_word!='\0' && *end_of_word!=',' && *end_of_word!='{')   {
+			printf("error at line number %d ilegal opperand after %s",line_num,
+				instruction_list[i].instruction);
+			continue;
+		}
+
+		if (*end_of_word!='{')   {
+			
+			while (*end_of_word!=',' && !char_isblank(*end_of_word) && j<=MAX_OPERAND_SIZE) {
+				first_opperand[j-1]=*end_of_word;
+				end_of_word++;
+				j++;
+			}
 		}
 
 		printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number,line);
@@ -235,7 +280,7 @@ char* parser_get_label(const char* line, int line_num) {
 		strncpy(label, line, len);
 		label[len] = '\0';
 
-		/* check if label name is register name*/
+		/* check if label name is a register name*/
 		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label,"PC") || !strcmp(label,"SP") || !strcmp(label,"PSW")) {
 			error_set("Error", "Illegal label name, same as register.", line_num);
 			return NULL;
@@ -317,7 +362,8 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 
 		if (*begin_of_word == '-')
 			data_number *= -1;
-
+		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=data_number;
+		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
 		num_of_param++;
 
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
@@ -329,11 +375,13 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 		if (*end_of_word == ',') {
 			end_of_word++;
 			num_of_comma++;
+			line_num_ofset++;
 		}
 	}
-	if (num_of_comma != num_of_param - 1)
+	if (num_of_comma != num_of_param - 1) {
 		error_set("Warning", "Data line contain spare comma at the end.", line_num);
-
+		line_num_ofset--;
+	}
 }
 
 int extruct_string(char * begin_of_word,char *end_of_word,int const line_num,char * line) {
@@ -358,6 +406,13 @@ int extruct_string(char * begin_of_word,char *end_of_word,int const line_num,cha
 	}
 
 	printf("\nthis is a string line, the string is %s\n", begin_of_word);
+	while (begin_of_word+1<end_of_word) {
+		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
+		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=*(begin_of_word+1);
+		begin_of_word++;
+		line_num_ofset++;
+	} 
+	line_num_ofset--;	
 	return 0;
 }
 
@@ -374,7 +429,14 @@ int extruct_label(char * begin_of_word,char *end_of_word,int const line_num,char
 	end_of_word = line + strlen(line) - 1;
 	while (char_isblank(*end_of_word))
 		end_of_word--;
-			
+	
+
+	/* check if label name is a register name*/
+	if ((end_of_word-begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word,"PC",2) || !strncmp(begin_of_word,"SP",2))) || (end_of_word-begin_of_word == 2 && !strncmp(begin_of_word,"PSW",3))) {
+		error_set("Error", "Illegal label name, same as register.", line_num);
+		return 0;
+	} 
+		
 	while (isalnum(*end_of_word))
 		end_of_word--; 
 			
@@ -383,6 +445,43 @@ int extruct_label(char * begin_of_word,char *end_of_word,int const line_num,char
 		return 0;
 	}
 
+
 	printf("\nthis is an %s line, the entry label is %s\n",line_kind, begin_of_word);
+	
 	return 0;
+}
+
+long extruct_number(char number[MAX_LABEL_SIZE+1],int const line_num) {
+	long data_number;
+	int k=1;
+		
+	if (number[k]!= '-' && number[k]!= '+' && !isdigit(number[k])) {
+		error_set("Error", "Illegal operand, expect number after.", line_num);
+		return 999999;
+	}
+		
+	k++;
+	data_number = 0;
+	if (isdigit(number[k]))
+		data_number = number[k] - '0';
+		
+	while (number[k]!= '\0') {
+		if (!isdigit(number[k])) {
+			error_set("Error", "Illegal number after #.", line_num);
+			return 999999;
+		}
+		else {					
+			data_number = 10 * data_number + number[k] - '0';
+			if ((*number == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
+				error_set("Error", "Number out of limit.", line_num);
+				return 999999;
+			}
+		}
+		k++; 
+	}
+
+	if (*number == '-')
+		return data_number*(-1);
+	
+	return data_number;
 }

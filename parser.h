@@ -15,6 +15,9 @@
 #define MAX_DATA_NUMBER 524287 
 /* =2^20-2^19 */
 #define MIN_DATA_NUMBER -524288 
+#define MAX_OPERAND_SIZE 63
+#define LINE_OFSET 100
+/* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
 /**
  *  Assembler instruction set.
@@ -37,6 +40,32 @@ typedef struct {
 	char *instruction;
 } Instruction;
 
+typedef struct {
+	unsigned int comb : 2; /*active only if type=1*/
+	unsigned int destination_register : 3;
+	unsigned int destination_addressing : 2;
+	unsigned int source_register : 3;
+	unsigned int source_addressing : 2;
+	unsigned int opcode : 4;
+	unsigned int type : 1;
+	unsigned int unused : 3;
+} instruction_word; 
+
+typedef struct {
+	unsigned int data : 20;
+} data_word;
+
+typedef union { 
+	instruction_word inst;
+	data_word data;
+} word;
+
+typedef struct {
+	int decimal_address;
+	char *label_to_extruct;
+	word line_word;
+} line_parse;
+
 /**
  * The data stored on a labels-list's node.
  */
@@ -44,21 +73,6 @@ typedef struct {
 	char* label;
 	unsigned int line; 
 } Label;
-
-typedef struct {
-	unsigned int line;
-	char label[MAX_LABEL_SIZE + 1];
-	unsigned int address;
-	char* command;
-	char* operands[2];
-	unsigned int type :1;
-	unsigned int source_half :1;
-	unsigned int destination_half :1;
-	/* Store the 20-bit final mapping in array of two ints, because one int
-	 * is defined to be at least 16 bits. */
-	unsigned int mapping[2];
-} LineData;
-
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
