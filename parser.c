@@ -9,11 +9,11 @@
 #include <string.h>
 
 List parser_symbols_list;
-line_parse line_word[2000];
+List lines_data_list;
+
 int line_num_ofset = LINE_OFSET-1;
 
 void parser_parse() {
-	
 	const Instruction instruction_list[] = {
 		{0, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
 		{1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
@@ -35,9 +35,10 @@ void parser_parse() {
 	
 	char* line, first_opperand[MAX_LABEL_SIZE+1];
 	Label* label;
-	char *begin_of_word,*end_of_word,command_type[7]; /*,source[80],destination[80];*/
+	line_parse* line_data;
+	char *begin_of_word,*end_of_word,command_type[7];
 	int line_num = 0, i,j; 
-	 /*, first_addressing_type, second_addressing_type;*/
+
 	long data_number;
 	void extruct_data_number(char*,char *,int);
 	int extruct_string(char*,char *,int,char *);
@@ -51,7 +52,8 @@ void parser_parse() {
 		if (*line == ';') 
 			continue;
 
-		label = (Label*)malloc(sizeof(Label));
+		line_data = New(line_parse);
+		label = New(Label);
 		label->label = parser_get_label(line, line_num);
 		label->line = line_num_ofset;
 		
@@ -72,9 +74,11 @@ void parser_parse() {
 			continue;
 		
 		line_num_ofset++;		
-		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
-		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=0;
-		line_word[line_num_ofset-LINE_OFSET].label_to_extruct=NULL;
+		line_data->decimal_address = line_num_ofset;
+		line_data->line_word.data.data = 0;
+		line_data->label_to_extruct = NULL;
+		
+		lines_data_list = list_append(lines_data_list, line_data);
 
 		/* find end of command */
 		end_of_word = begin_of_word + 1;
@@ -312,6 +316,7 @@ void _parser_print_label(void* data) {
 void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
+	line_parse* line_data = New(line_parse);
 
 	num_of_param = 0;
 	num_of_comma = 0;
@@ -362,8 +367,11 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 
 		if (*begin_of_word == '-')
 			data_number *= -1;
-		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=data_number;
-		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
+		
+		line_data->decimal_address = line_num_ofset;
+		line_data->line_word.data.data = data_number;		
+		lines_data_list = list_append(lines_data_list, line_data);
+		
 		num_of_param++;
 
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
@@ -385,7 +393,7 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 }
 
 int extruct_string(char * begin_of_word,char *end_of_word,int const line_num,char * line) {
-	
+	line_parse* line_data = New(line_parse);
 	begin_of_word = end_of_word;
 			
 	find_next_non_blank_char(begin_of_word);
@@ -407,8 +415,10 @@ int extruct_string(char * begin_of_word,char *end_of_word,int const line_num,cha
 
 	printf("\nthis is a string line, the string is %s\n", begin_of_word);
 	while (begin_of_word+1<end_of_word) {
-		line_word[line_num_ofset-LINE_OFSET].decimal_address=line_num_ofset;
-		line_word[line_num_ofset-LINE_OFSET].line_word.data.data=*(begin_of_word+1);
+		line_data->decimal_address = line_num_ofset;
+		line_data->line_word.data.data = *(begin_of_word+1);		
+		lines_data_list = list_append(lines_data_list, line_data);
+
 		begin_of_word++;
 		line_num_ofset++;
 	} 

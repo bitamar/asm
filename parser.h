@@ -1,8 +1,5 @@
 /*
  * parser.h
- *
- *  Depends on: reader
- *  Required by: main
  */
 
 #ifndef PARSER_H_
@@ -41,14 +38,14 @@ typedef struct {
 } Instruction;
 
 typedef struct {
-	unsigned int comb : 2; /*active only if type=1*/
-	unsigned int destination_register : 3;
-	unsigned int destination_addressing : 2;
-	unsigned int source_register : 3;
-	unsigned int source_addressing : 2;
-	unsigned int opcode : 4;
-	unsigned int type : 1;
-	unsigned int unused : 3;
+	unsigned int comb :2; /*active only if type=1*/
+	unsigned int destination_register :3;
+	unsigned int destination_addressing :2;
+	unsigned int source_register :3;
+	unsigned int source_addressing :2;
+	unsigned int opcode :4;
+	unsigned int type :1;
+	unsigned int unused :3;
 } instruction_word; 
 
 typedef struct {
