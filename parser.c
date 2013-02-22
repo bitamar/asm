@@ -52,7 +52,6 @@ void parser_parse() {
 		if (*line == ';')
 			continue;
 
-		line_data = New(line_parse);
 		label = New(Label);
 		label->label = parser_get_label(line, line_num);
 		label->line = line_num_ofset;
@@ -72,10 +71,10 @@ void parser_parse() {
 			continue;
 
 		line_num_ofset++;
+		line_data = New(line_parse);
 		line_data->decimal_address = line_num_ofset;
 		line_data->line_word.data.data = 0;
 		line_data->label_to_extruct = NULL;
-
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		/* find end of command */
@@ -314,7 +313,7 @@ void _parser_print_label(void* data) {
 void extruct_data_number(char * begin_of_word, char *end_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
-	line_parse* line_data = New(line_parse);
+	line_parse* line_data;
 
 	num_of_param = 0;
 	num_of_comma = 0;
@@ -366,6 +365,7 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 		if (*begin_of_word == '-')
 			data_number *= -1;
 
+		line_data = New(line_parse);
 		line_data->decimal_address = line_num_ofset;
 		line_data->line_word.data.data = data_number;
 		lines_data_list = list_append(lines_data_list, line_data);
@@ -391,7 +391,7 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 }
 
 int extruct_string(char * begin_of_word, char *end_of_word, int const line_num, char * line) {
-	line_parse* line_data = New(line_parse);
+	line_parse* line_data;
 	begin_of_word = end_of_word;
 
 	find_next_non_blank_char(begin_of_word);
@@ -413,6 +413,7 @@ int extruct_string(char * begin_of_word, char *end_of_word, int const line_num, 
 
 	printf("\nthis is a string line, the string is %s\n", begin_of_word);
 	while (begin_of_word + 1 < end_of_word) {
+		line_data = New(line_parse);
 		line_data->decimal_address = line_num_ofset;
 		line_data->line_word.data.data = *(begin_of_word + 1);
 		lines_data_list = list_append(lines_data_list, line_data);
