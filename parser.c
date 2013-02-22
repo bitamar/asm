@@ -11,7 +11,7 @@
 List parser_symbols_list;
 List lines_data_list;
 
-int line_num_ofset = LINE_OFSET-1;
+int line_num_ofset = LINE_OFSET - 1;
 
 void parser_parse() {
 	const Instruction instruction_list[] = {
@@ -32,74 +32,74 @@ void parser_parse() {
 		{14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
 		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
-	
-	char* line, first_opperand[MAX_LABEL_SIZE+1];
+
+	char* line, first_opperand[MAX_LABEL_SIZE + 1];
 	Label* label;
 	line_parse* line_data;
-	char *begin_of_word,*end_of_word,command_type[7];
-	int line_num = 0, i,j; 
+	char *begin_of_word, *end_of_word, command_type[7];
+	int line_num = 0, i, j;
 
 	long data_number;
-	void extruct_data_number(char*,char *,int);
-	int extruct_string(char*,char *,int,char *);
-	int extruct_label(char*,char *,int,char *,char *);
-	long extruct_number(char *,int const);
+	void extruct_data_number(char*, char *, int);
+	int extruct_string(char*, char *, int, char *);
+	int extruct_label(char*, char *, int, char *, char *);
+	long extruct_number(char *, int const);
 
-	while ((line = reader_get_line())) {		
+	while ((line = reader_get_line())) {
 		line_num++;
-		
+
 		/* this is for remark line */
-		if (*line == ';') 
+		if (*line == ';')
 			continue;
 
 		line_data = New(line_parse);
 		label = New(Label);
 		label->label = parser_get_label(line, line_num);
 		label->line = line_num_ofset;
-		
-		begin_of_word=line;
-		
+
+		begin_of_word = line;
+
 		if (label->label) {
 			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
 			/* begin_of_word points to first char after label */
-			begin_of_word = line + strlen(label->label) + 1; 
+			begin_of_word = line + strlen(label->label) + 1;
 		}
 
 		find_next_non_blank_char(begin_of_word);
 
 		/* this is an empty line */
-		if (*begin_of_word == '\0' && !label->label) 
+		if (*begin_of_word == '\0' && !label->label)
 			continue;
-		
-		line_num_ofset++;		
+
+		line_num_ofset++;
 		line_data->decimal_address = line_num_ofset;
 		line_data->line_word.data.data = 0;
 		line_data->label_to_extruct = NULL;
-		
+
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		/* find end of command */
 		end_of_word = begin_of_word + 1;
 		while (!char_isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
-		
+
 		/* this is a data line */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
-			extruct_data_number(begin_of_word,end_of_word,line_num);
+			extruct_data_number(begin_of_word, end_of_word, line_num);
 			continue;
 		}
 
 		/* this is a string line */
-		
+
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extruct_string(begin_of_word,end_of_word,line_num,line);
+			extruct_string(begin_of_word, end_of_word, line_num, line);
 			continue;
 		}
 
-		
+
 		/* this is an entry label declaration line */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
-			extruct_label(begin_of_word,end_of_word,line_num,line,"entry");
+			extruct_label(begin_of_word, end_of_word, line_num, line, "entry");
 			continue;
 		}
 
@@ -107,17 +107,17 @@ void parser_parse() {
 		/* this is an extern label declaration line */
 
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extruct_label(begin_of_word,end_of_word,line_num,line,"extern");
+			extruct_label(begin_of_word, end_of_word, line_num, line, "extern");
 			continue;
 		}
-		
+
 		/* this is a command line*/
 		if (strlen(line) > 80) {
 			error_set("Error", "line length exceeding 80 char", line_num);
 			continue;
 		}
 
-		for (i=0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
+		for (i = 0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
 		if (i == 16) {
 			error_set("Error", "Unknown instruction", line_num);
 			continue;
@@ -126,9 +126,9 @@ void parser_parse() {
 		/* find '/0' or /1 */
 		find_next_non_blank_char(end_of_word);
 		command_type[0] = *end_of_word;
-		if (*end_of_word != '\0')	{
+		if (*end_of_word != '\0') {
 			end_of_word++;
-			find_next_non_blank_char(end_of_word);			
+			find_next_non_blank_char(end_of_word);
 			command_type[1] = *end_of_word;
 			command_type[2] = '\0';
 		}
@@ -137,122 +137,122 @@ void parser_parse() {
 			continue;
 		}
 
-		if (*end_of_word!='\0')	
+		if (*end_of_word != '\0')
 			end_of_word++;
 
-		if (command_type[1]=='1') {
-			for (j=0;j<4;j++) {
+		if (command_type[1] == '1') {
+			for (j = 0; j < 4; j++) {
 				find_next_non_blank_char(end_of_word);
-				command_type[2+j]=*end_of_word;
-				command_type[2+j+1]='\0';
-				if (*end_of_word!='\0')	
-					end_of_word++;				
+				command_type[2 + j] = *end_of_word;
+				command_type[2 + j + 1] = '\0';
+				if (*end_of_word != '\0')
+					end_of_word++;
 			}
 
-			if (!(command_type[0] == '/' && command_type[2] == '/' && command_type[4] == '/' && 
-				(command_type[5] == '0' || command_type[5] == '1') && 
-				(command_type[3] == '0' || command_type[3] == '1'))) {
+			if (!(command_type[0] == '/' && command_type[2] == '/' && command_type[4] == '/' &&
+					(command_type[5] == '0' || command_type[5] == '1') &&
+					(command_type[3] == '0' || command_type[3] == '1'))) {
 				error_set("Error", "Illegal command type", line_num);
 				continue;
 			}
 		}
 
 		/* verify blank after type */
-		if (!char_isblank(*end_of_word) && *end_of_word!='\0') {
+		if (!char_isblank(*end_of_word) && *end_of_word != '\0') {
 			error_set("Error", "Blank char is required after instruction.", line_num);
 			continue;
 		}
-		
+
 		/* find first opperand */
 
 		find_next_non_blank_char(end_of_word);
 
 
-		if (*end_of_word=='\0' && (instruction_list[i].source_opperand || 
-		    instruction_list[i].destination_opperand)) {
-			printf("error at line number %d opperand expected after %s",line_num,
-				instruction_list[i].instruction);
+		if (*end_of_word == '\0' && (instruction_list[i].source_opperand ||
+				instruction_list[i].destination_opperand)) {
+			printf("error at line number %d opperand expected after %s", line_num,
+					instruction_list[i].instruction);
 			continue;
 		}
 
-		if (*end_of_word!='\0' && instruction_list[i].source_opperand==0 && 
-		    instruction_list[i].destination_opperand==0) {
+		if (*end_of_word != '\0' && instruction_list[i].source_opperand == 0 &&
+				instruction_list[i].destination_opperand == 0) {
 
-			printf("error at line number %d no opperand expected after %s",line_num,
-				instruction_list[i].instruction);
+			printf("error at line number %d no opperand expected after %s", line_num,
+					instruction_list[i].instruction);
 			continue;
 		}
 
-		if (*end_of_word=='\0' && instruction_list[i].source_opperand==0 && 
-		    instruction_list[i].destination_opperand==0) {
+		if (*end_of_word == '\0' && instruction_list[i].source_opperand == 0 &&
+				instruction_list[i].destination_opperand == 0) {
 			/* a command without oppenrand found */
-			printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, 				        instruction_list[i].instruction, line);
+			printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
 			continue;
 		}
-		
-		if (*end_of_word!='#' && !isalpha(*end_of_word)) {
-			
+
+		if (*end_of_word != '#' && !isalpha(*end_of_word)) {
+
 			printf("\nilegal parameter at line%d\n", line_num);
 			continue;
-		}				
-	
-		j=1;
-		while (isalnum(*end_of_word) && j<=MAX_OPERAND_SIZE) {
-			first_opperand[j-1]=*end_of_word;
+		}
+
+		j = 1;
+		while (isalnum(*end_of_word) && j <= MAX_OPERAND_SIZE) {
+			first_opperand[j - 1] = *end_of_word;
 			end_of_word++;
 			j++;
 		}
 
-		if (j==MAX_OPERAND_SIZE) {
-			printf("error at line number %d ilegal opperand after %s",line_num,
-				instruction_list[i].instruction);
+		if (j == MAX_OPERAND_SIZE) {
+			printf("error at line number %d ilegal opperand after %s", line_num,
+					instruction_list[i].instruction);
 			continue;
 		}
-		
-		first_opperand[j-1]='\0';
+
+		first_opperand[j - 1] = '\0';
 		find_next_non_blank_char(end_of_word);
-		if (*end_of_word!='{' && *end_of_word!=',' && *end_of_word!='\0') {
-			
+		if (*end_of_word != '{' && *end_of_word != ',' && *end_of_word != '\0') {
+
 			printf("\nilegal parameter at line%d\n", line_num);
 			continue;
-		}				
+		}
 
-		if (*end_of_word=='\0') {
+		if (*end_of_word == '\0') {
 			/*there is only one parameter*/
 			if (!(instruction_list[i].source_opperand ^ instruction_list[i].destination_opperand)) {
 				printf("\nincompatble number of parameters %d\n", line_num);
 				continue;
 			}
 
-			if (*end_of_word=='#')
+			if (*end_of_word == '#')
 				/*addressing is value 0*/
-				data_number=extruct_number(first_opperand,line_num);
+				data_number = extruct_number(first_opperand, line_num);
 			/* else this is a label or register*/
-			
-			continue;
-		}				
-		
 
-		find_next_non_blank_char(end_of_word);
-		if (*end_of_word!='\0' && *end_of_word!=',' && *end_of_word!='{')   {
-			printf("error at line number %d ilegal opperand after %s",line_num,
-				instruction_list[i].instruction);
 			continue;
 		}
 
-		if (*end_of_word!='{')   {
-			
-			while (*end_of_word!=',' && !char_isblank(*end_of_word) && j<=MAX_OPERAND_SIZE) {
-				first_opperand[j-1]=*end_of_word;
+
+		find_next_non_blank_char(end_of_word);
+		if (*end_of_word != '\0' && *end_of_word != ',' && *end_of_word != '{') {
+			printf("error at line number %d ilegal opperand after %s", line_num,
+					instruction_list[i].instruction);
+			continue;
+		}
+
+		if (*end_of_word != '{') {
+
+			while (*end_of_word != ',' && !char_isblank(*end_of_word) && j <= MAX_OPERAND_SIZE) {
+				first_opperand[j - 1] = *end_of_word;
 				end_of_word++;
 				j++;
 			}
 		}
 
-		printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number,line);
+		printf("\n%d label is %s command is %s first parameter is %ld line is %s\n", line_num, label->label, instruction_list[i].instruction, data_number, line);
 		free(line);
 	}
-	
+
 	/*error_print_list();*/
 	list_print(parser_symbols_list, &_parser_print_label);
 }
@@ -261,36 +261,36 @@ char* parser_get_label(const char* line, int line_num) {
 	int len = 0;
 	char* label;
 	const char* c = line;
-	
-	label = (char*)malloc(MAX_LABEL_SIZE + 1);
-	if (!label) 
+
+	label = (char*) malloc(MAX_LABEL_SIZE + 1);
+	if (!label)
 		error_fatal(ErrorMemoryAlloc);
-	
+
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
 	if (!isalpha(*c)) {
 		free(label);
 		return NULL;
 	}
-		
-	while(isalnum(*c) && len < MAX_LABEL_SIZE) {
+
+	while (isalnum(*c) && len < MAX_LABEL_SIZE) {
 		c++;
 		len++;
 	}
-	
+
 	if (line[len] == ':') {
 		strncpy(label, line, len);
 		label[len] = '\0';
 
 		/* check if label name is a register name*/
-		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label,"PC") || !strcmp(label,"SP") || !strcmp(label,"PSW")) {
+		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
 			error_set("Error", "Illegal label name, same as register.", line_num);
 			return NULL;
-		} 
+		}
 
 		return label;
 	}
-	
+
 	free(label);
 	return NULL;
 }
@@ -311,7 +311,7 @@ void _parser_print_label(void* data) {
 	printf("%d: %s\n", label->line, label->label);
 }
 
-void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_num) {
+void extruct_data_number(char * begin_of_word, char *end_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
 	line_parse* line_data = New(line_parse);
@@ -326,37 +326,37 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(end_of_word);
 
-	begin_of_word = end_of_word;
-		
-	if (*begin_of_word == '\0' && num_of_param == 0) 
-		error_set("Warning", "Data line contains no data.", line_num);
-				
-	if (*begin_of_word == '\0')
-		continue;
+		begin_of_word = end_of_word;
 
-	if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
-		error_set("Error", "Data line contain illegal number", line_num);
-		break;
-	}
+		if (*begin_of_word == '\0' && num_of_param == 0)
+			error_set("Warning", "Data line contains no data.", line_num);
 
-	end_of_word++;
-	data_number = 0;
-	if (isdigit(*begin_of_word))
-		data_number = *begin_of_word - '0';
-
-	while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
-		if (!isdigit(*end_of_word)) {						
-			error_set("Error", "data line contain illegal number", line_num);;
+		if (*begin_of_word == '\0')
 			continue;
+
+		if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
+			error_set("Error", "Data line contain illegal number", line_num);
+			break;
 		}
-		else {
-		/* @TODO: Explain. */
+
+		end_of_word++;
+		data_number = 0;
+		if (isdigit(*begin_of_word))
+			data_number = *begin_of_word - '0';
+
+		while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
+			if (!isdigit(*end_of_word)) {
+				error_set("Error", "data line contain illegal number", line_num);
+				;
+				continue;
+			} else {
+				/* @TODO: Explain. */
 				data_number = 10 * data_number + *end_of_word - '0';
 				if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 					error_set("Error", "number out of limit", line_num);
 					while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
 						end_of_word++;
-								
+
 					continue;
 				}
 			}
@@ -365,16 +365,16 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 
 		if (*begin_of_word == '-')
 			data_number *= -1;
-		
+
 		line_data->decimal_address = line_num_ofset;
-		line_data->line_word.data.data = data_number;		
+		line_data->line_word.data.data = data_number;
 		lines_data_list = list_append(lines_data_list, line_data);
-		
+
 		num_of_param++;
 
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
 			printf("\n data is %ld\n", data_number);
-			
+
 		find_next_non_blank_char(end_of_word);
 
 
@@ -390,42 +390,42 @@ void extruct_data_number(char * begin_of_word,char *end_of_word,int const line_n
 	}
 }
 
-int extruct_string(char * begin_of_word,char *end_of_word,int const line_num,char * line) {
+int extruct_string(char * begin_of_word, char *end_of_word, int const line_num, char * line) {
 	line_parse* line_data = New(line_parse);
 	begin_of_word = end_of_word;
-			
+
 	find_next_non_blank_char(begin_of_word);
 
 	if (*begin_of_word != '"') {
 		error_set("Error", "String expected after .string", line_num);
 		return 0;
 	}
-			
+
 	end_of_word = line + strlen(line) - 1;
-			
+
 	while (char_isblank(*end_of_word))
 		end_of_word--;
-			
+
 	if (*(end_of_word) != '"' || end_of_word == begin_of_word) {
 		error_set("Error", "String expected after .string", line_num);
 		return 0;
 	}
 
 	printf("\nthis is a string line, the string is %s\n", begin_of_word);
-	while (begin_of_word+1<end_of_word) {
+	while (begin_of_word + 1 < end_of_word) {
 		line_data->decimal_address = line_num_ofset;
-		line_data->line_word.data.data = *(begin_of_word+1);		
+		line_data->line_word.data.data = *(begin_of_word + 1);
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		begin_of_word++;
 		line_num_ofset++;
-	} 
-	line_num_ofset--;	
+	}
+	line_num_ofset--;
 	return 0;
 }
 
-int extruct_label(char * begin_of_word,char *end_of_word,int const line_num,char * line,char * line_kind) {
-	begin_of_word=end_of_word;
+int extruct_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, char * line_kind) {
+	begin_of_word = end_of_word;
 
 	find_next_non_blank_char(begin_of_word);
 
@@ -433,63 +433,62 @@ int extruct_label(char * begin_of_word,char *end_of_word,int const line_num,char
 		error_set("Error", "Not a legal label", line_num);
 		return 0;
 	}
-			
+
 	end_of_word = line + strlen(line) - 1;
 	while (char_isblank(*end_of_word))
 		end_of_word--;
-	
+
 
 	/* check if label name is a register name*/
-	if ((end_of_word-begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word,"PC",2) || !strncmp(begin_of_word,"SP",2))) || (end_of_word-begin_of_word == 2 && !strncmp(begin_of_word,"PSW",3))) {
+	if ((end_of_word - begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word, "PC", 2) || !strncmp(begin_of_word, "SP", 2))) || (end_of_word - begin_of_word == 2 && !strncmp(begin_of_word, "PSW", 3))) {
 		error_set("Error", "Illegal label name, same as register.", line_num);
 		return 0;
-	} 
-		
+	}
+
 	while (isalnum(*end_of_word))
-		end_of_word--; 
-			
+		end_of_word--;
+
 	if (end_of_word > begin_of_word) {
-		error_set("Error", strcat("Label expected after .",line_kind), line_num);
+		error_set("Error", strcat("Label expected after .", line_kind), line_num);
 		return 0;
 	}
 
 
-	printf("\nthis is an %s line, the entry label is %s\n",line_kind, begin_of_word);
-	
+	printf("\nthis is an %s line, the entry label is %s\n", line_kind, begin_of_word);
+
 	return 0;
 }
 
-long extruct_number(char number[MAX_LABEL_SIZE+1], const int line_num) {
+long extruct_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 	long data_number;
-	int k=1;
-		
-	if (number[k]!= '-' && number[k]!= '+' && !isdigit(number[k])) {
+	int k = 1;
+
+	if (number[k] != '-' && number[k] != '+' && !isdigit(number[k])) {
 		error_set("Error", "Illegal operand, expect number after.", line_num);
 		return 999999;
 	}
-		
+
 	k++;
 	data_number = 0;
 	if (isdigit(number[k]))
 		data_number = number[k] - '0';
-		
-	while (number[k]!= '\0') {
+
+	while (number[k] != '\0') {
 		if (!isdigit(number[k])) {
 			error_set("Error", "Illegal number after #.", line_num);
 			return 999999;
-		}
-		else {					
+		} else {
 			data_number = 10 * data_number + number[k] - '0';
 			if ((*number == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 				error_set("Error", "Number out of limit.", line_num);
 				return 999999;
 			}
 		}
-		k++; 
+		k++;
 	}
 
 	if (*number == '-')
-		return data_number*(-1);
-	
+		return data_number * (-1);
+
 	return data_number;
 }
