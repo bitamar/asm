@@ -64,8 +64,6 @@ void parser_parse() {
 			/* begin_of_word points to first char after label */
 			begin_of_word = line + strlen(label->label) + 1; 
 		}
-		else
-			free(label);
 
 		find_next_non_blank_char(begin_of_word);
 
