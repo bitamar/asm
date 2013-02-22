@@ -64,19 +64,19 @@ void parser_parse() {
 
 		/* this is for empty line */
 		if (*begin_of_word == '\0') {
-			free (label);
+			free(label);
 			continue;
 		}
 
-		if (label->label) { /*find begining of next word after label */		
+		if (label->label) { /*find begining of next word after label */
 			begin_of_word = line + strlen(label->label) + 1;
 			find_next_non_blank_char(begin_of_word);
 		}
 
 		if (*begin_of_word == '\0' && label->label) {
 			/*assuming every label declaration must folow instructions or declation of data */
-			error_set("Error", "label with no instrucion", line_num); 
-			free (label);
+			error_set("Error", "label with no instrucion", line_num);
+			free(label);
 			continue;
 		}
 
@@ -86,8 +86,8 @@ void parser_parse() {
 			end_of_word++;
 
 		if (((!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/')
-		    || (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/'))
-		    && label->label) {
+				|| (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/'))
+				&& label->label) {
 			label->is_data = 1;
 			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
 
@@ -95,14 +95,14 @@ void parser_parse() {
 
 		/* this is a data line */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
-			extract_data_number(end_of_word+1, line_num);
+			extract_data_number(end_of_word + 1, line_num);
 			continue;
 		}
 
 		/* this is a string line */
 
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extract_string(end_of_word+1, line_num, line);
+			extract_string(end_of_word + 1, line_num, line);
 			continue;
 		}
 
@@ -120,14 +120,14 @@ void parser_parse() {
 			extract_label(begin_of_word, end_of_word, line_num, line, "extern");
 			continue;
 		}
-		
+
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
 		line_data->line_word.data.data = 0;
 		line_data->label_to_extract = NULL;
 		lines_data_list = list_append(lines_data_list, line_data);
 		IC++;
-		
+
 		/* this is a command line*/
 		if (strlen(line) > 80) {
 			error_set("Error", "line length exceeding 80 char", line_num);
@@ -340,7 +340,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(begin_of_word);
-		end_of_word=begin_of_word;
+		end_of_word = begin_of_word;
 		if (*begin_of_word == '\0' && num_of_param == 0)
 			error_set("Warning", "Data line contains no data.", line_num);
 
@@ -361,7 +361,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 			if (!isdigit(*end_of_word)) {
 				error_set("Error", "data line contain illegal number", line_num);
 				continue;
-			} 
+			}
 			else {
 				/* @TODO: Explain. */
 				data_number = 10 * data_number + *end_of_word - '0';
@@ -385,7 +385,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		lines_data_list = list_append(lines_data_list, line_data);
 		IC++;
 		num_of_param++;
-		
+
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
 			printf("\n data is %ld\n", data_number);
 
