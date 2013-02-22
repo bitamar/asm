@@ -59,7 +59,7 @@ typedef union {
 
 typedef struct {
 	int decimal_address;
-	char *label_to_extruct;
+	char *label_to_extract;
 	word line_word;
 } line_parse;
 

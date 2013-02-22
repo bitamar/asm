@@ -42,10 +42,10 @@ void parser_parse() {
 	int line_num = 0, i, j;
 
 	long data_number;
-	void extruct_data_number(char *, int);
-	int extruct_string(char *, int, char *);
-	int extruct_label(char*, char *, int, char *, char *);
-	long extruct_number(char *, int const);
+	void extract_data_number(char *, int);
+	int extract_string(char *, int, char *);
+	int extract_label(char*, char *, int, char *, char *);
+	long extract_number(char *, int const);
 
 	while ((line = reader_get_line())) {
 		line_num++;
@@ -95,21 +95,21 @@ void parser_parse() {
 
 		/* this is a data line */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
-			extruct_data_number(end_of_word+1, line_num);
+			extract_data_number(end_of_word+1, line_num);
 			continue;
 		}
 
 		/* this is a string line */
 
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extruct_string(end_of_word+1, line_num, line);
+			extract_string(end_of_word+1, line_num, line);
 			continue;
 		}
 
 
 		/* this is an entry label declaration line */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
-			extruct_label(begin_of_word, end_of_word, line_num, line, "entry");
+			extract_label(begin_of_word, end_of_word, line_num, line, "entry");
 			continue;
 		}
 
@@ -117,14 +117,14 @@ void parser_parse() {
 		/* this is an extern label declaration line */
 
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extruct_label(begin_of_word, end_of_word, line_num, line, "extern");
+			extract_label(begin_of_word, end_of_word, line_num, line, "extern");
 			continue;
 		}
 		
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
 		line_data->line_word.data.data = 0;
-		line_data->label_to_extruct = NULL;
+		line_data->label_to_extract = NULL;
 		lines_data_list = list_append(lines_data_list, line_data);
 		IC++;
 		
@@ -243,7 +243,7 @@ void parser_parse() {
 
 			if (*end_of_word == '#')
 				/*addressing is value 0*/
-				data_number = extruct_number(first_opperand, line_num);
+				data_number = extract_number(first_opperand, line_num);
 			/* else this is a label or register*/
 
 			continue;
@@ -328,7 +328,7 @@ void _parser_print_label(void* data) {
 	printf("%d: %s\n", label->line, label->label);
 }
 
-void extruct_data_number(char * begin_of_word, int const line_num) {
+void extract_data_number(char * begin_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
 	line_parse* line_data;
@@ -402,7 +402,7 @@ void extruct_data_number(char * begin_of_word, int const line_num) {
 	}
 }
 
-int extruct_string(char * begin_of_word, int const line_num, char * line) {
+int extract_string(char * begin_of_word, int const line_num, char * line) {
 	line_parse* line_data;
 	char * end_of_word;
 	find_next_non_blank_char(begin_of_word);
@@ -442,7 +442,7 @@ int extruct_string(char * begin_of_word, int const line_num, char * line) {
 	return 0;
 }
 
-int extruct_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, char * line_kind) {
+int extract_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, char * line_kind) {
 	begin_of_word = end_of_word;
 
 	find_next_non_blank_char(begin_of_word);
@@ -477,7 +477,7 @@ int extruct_label(char * begin_of_word, char *end_of_word, int const line_num, c
 	return 0;
 }
 
-long extruct_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
+long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 	long data_number;
 	int k = 1;
 
