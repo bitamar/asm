@@ -44,7 +44,7 @@ void parser_parse() {
 	long data_number;
 	void extract_data_number(char *, int);
 	int extract_string(char *, int, char *);
-	int extract_label(char*, char *, int, char *, char *);
+	int extract_label(char*, char *, int, char *, LineType);
 	long extract_number(char *, int const);
 
 	while ((line = reader_get_line())) {
@@ -109,7 +109,7 @@ void parser_parse() {
 
 		/* this is an entry label declaration line */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
-			extract_label(begin_of_word, end_of_word, line_num, line, "entry");
+			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_ENTRY);
 			continue;
 		}
 
@@ -117,7 +117,7 @@ void parser_parse() {
 		/* this is an extern label declaration line */
 
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extract_label(begin_of_word, end_of_word, line_num, line, "extern");
+			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
 			continue;
 		}
 
@@ -442,13 +442,13 @@ int extract_string(char * begin_of_word, int const line_num, char * line) {
 	return 0;
 }
 
-int extract_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, char * line_kind) {
+int extract_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, LineType line_type) {
 	begin_of_word = end_of_word;
 
 	find_next_non_blank_char(begin_of_word);
 
 	if (!isalpha(*begin_of_word)) {
-		error_set("Error", "Not a legal label", line_num);
+		error_set("Error", "Illegal label.", line_num);
 		return 0;
 	}
 
@@ -467,12 +467,12 @@ int extract_label(char * begin_of_word, char *end_of_word, int const line_num, c
 		end_of_word--;
 
 	if (end_of_word > begin_of_word) {
-		error_set("Error", strcat("Label expected after .", line_kind), line_num);
+		error_set("Error", "Label expected.", line_num);
 		return 0;
 	}
 
 
-	printf("\nthis is an %s line, the entry label is %s\n", line_kind, begin_of_word);
+	printf("\nthe label is %s\n", begin_of_word);
 
 	return 0;
 }
