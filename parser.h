@@ -69,6 +69,7 @@ typedef struct {
 typedef struct {
 	char* label;
 	unsigned int line; 
+	unsigned int is_data :1; /* 1 for data 0 for instruction*/
 } Label;
 /**
  * Does the initial parsing of the assembly file.

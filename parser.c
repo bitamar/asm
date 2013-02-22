@@ -9,9 +9,11 @@
 #include <string.h>
 
 List parser_symbols_list;
+List parser_extern_symbols;
+List parser_entry_symbols;
 List lines_data_list;
 
-int line_num_ofset = LINE_OFSET - 1;
+int IC = LINE_OFSET; /* Instruction counter */
 
 void parser_parse() {
 	const Instruction instruction_list[] = {
@@ -40,8 +42,8 @@ void parser_parse() {
 	int line_num = 0, i, j;
 
 	long data_number;
-	void extruct_data_number(char*, char *, int);
-	int extruct_string(char*, char *, int, char *);
+	void extruct_data_number(char *, int);
+	int extruct_string(char *, int, char *);
 	int extruct_label(char*, char *, int, char *, char *);
 	long extruct_number(char *, int const);
 
@@ -54,44 +56,53 @@ void parser_parse() {
 
 		label = New(Label);
 		label->label = parser_get_label(line, line_num);
-		label->line = line_num_ofset;
-
+		label->line = IC;
+		label->is_data = 0;
 		begin_of_word = line;
-
-		if (label->label) {
-			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
-			/* begin_of_word points to first char after label */
-			begin_of_word = line + strlen(label->label) + 1;
-		}
 
 		find_next_non_blank_char(begin_of_word);
 
-		/* this is an empty line */
-		if (*begin_of_word == '\0' && !label->label)
+		/* this is for empty line */
+		if (*begin_of_word == '\0') {
+			free (label);
 			continue;
+		}
 
-		line_num_ofset++;
-		line_data = New(line_parse);
-		line_data->decimal_address = line_num_ofset;
-		line_data->line_word.data.data = 0;
-		line_data->label_to_extruct = NULL;
-		lines_data_list = list_append(lines_data_list, line_data);
+		if (label->label) { /*find begining of next word after label */		
+			begin_of_word = line + strlen(label->label) + 1;
+			find_next_non_blank_char(begin_of_word);
+		}
+
+		if (*begin_of_word == '\0' && label->label) {
+			/*assuming every label declaration must folow instructions or declation of data */
+			error_set("Error", "label with no instrucion", line_num); 
+			free (label);
+			continue;
+		}
 
 		/* find end of command */
 		end_of_word = begin_of_word + 1;
 		while (!char_isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
 
+		if (((!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/')
+		    || (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/'))
+		    && label->label) {
+			label->is_data = 1;
+			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
+
+		}
+
 		/* this is a data line */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
-			extruct_data_number(begin_of_word, end_of_word, line_num);
+			extruct_data_number(end_of_word+1, line_num);
 			continue;
 		}
 
 		/* this is a string line */
 
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
-			extruct_string(begin_of_word, end_of_word, line_num, line);
+			extruct_string(end_of_word+1, line_num, line);
 			continue;
 		}
 
@@ -109,7 +120,14 @@ void parser_parse() {
 			extruct_label(begin_of_word, end_of_word, line_num, line, "extern");
 			continue;
 		}
-
+		
+		line_data = New(line_parse);
+		line_data->decimal_address = IC;
+		line_data->line_word.data.data = 0;
+		line_data->label_to_extruct = NULL;
+		lines_data_list = list_append(lines_data_list, line_data);
+		IC++;
+		
 		/* this is a command line*/
 		if (strlen(line) > 80) {
 			error_set("Error", "line length exceeding 80 char", line_num);
@@ -310,23 +328,19 @@ void _parser_print_label(void* data) {
 	printf("%d: %s\n", label->line, label->label);
 }
 
-void extruct_data_number(char * begin_of_word, char *end_of_word, int const line_num) {
+void extruct_data_number(char * begin_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
 	line_parse* line_data;
+	char * end_of_word;
 
 	num_of_param = 0;
 	num_of_comma = 0;
 	printf("\nthis is a data line\n");
 
-	if (*end_of_word == '\0')
-		error_set("Warning", "Data line contains no data.", line_num);
-
 	while (*end_of_word != '\0') {
-		find_next_non_blank_char(end_of_word);
-
-		begin_of_word = end_of_word;
-
+		find_next_non_blank_char(begin_of_word);
+		end_of_word=begin_of_word;
 		if (*begin_of_word == '\0' && num_of_param == 0)
 			error_set("Warning", "Data line contains no data.", line_num);
 
@@ -335,7 +349,7 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 
 		if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
 			error_set("Error", "Data line contain illegal number", line_num);
-			break;
+			continue;
 		}
 
 		end_of_word++;
@@ -346,13 +360,13 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 		while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
 			if (!isdigit(*end_of_word)) {
 				error_set("Error", "data line contain illegal number", line_num);
-				;
 				continue;
-			} else {
+			} 
+			else {
 				/* @TODO: Explain. */
 				data_number = 10 * data_number + *end_of_word - '0';
 				if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
-					error_set("Error", "number out of limit", line_num);
+					error_set("Error", "number is out of limit", line_num);
 					while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
 						end_of_word++;
 
@@ -366,12 +380,12 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 			data_number *= -1;
 
 		line_data = New(line_parse);
-		line_data->decimal_address = line_num_ofset;
+		line_data->decimal_address = IC;
 		line_data->line_word.data.data = data_number;
 		lines_data_list = list_append(lines_data_list, line_data);
-
+		IC++;
 		num_of_param++;
-
+		
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
 			printf("\n data is %ld\n", data_number);
 
@@ -381,19 +395,16 @@ void extruct_data_number(char * begin_of_word, char *end_of_word, int const line
 		if (*end_of_word == ',') {
 			end_of_word++;
 			num_of_comma++;
-			line_num_ofset++;
 		}
 	}
 	if (num_of_comma != num_of_param - 1) {
 		error_set("Warning", "Data line contain spare comma at the end.", line_num);
-		line_num_ofset--;
 	}
 }
 
-int extruct_string(char * begin_of_word, char *end_of_word, int const line_num, char * line) {
+int extruct_string(char * begin_of_word, int const line_num, char * line) {
 	line_parse* line_data;
-	begin_of_word = end_of_word;
-
+	char * end_of_word;
 	find_next_non_blank_char(begin_of_word);
 
 	if (*begin_of_word != '"') {
@@ -414,14 +425,20 @@ int extruct_string(char * begin_of_word, char *end_of_word, int const line_num, 
 	printf("\nthis is a string line, the string is %s\n", begin_of_word);
 	while (begin_of_word + 1 < end_of_word) {
 		line_data = New(line_parse);
-		line_data->decimal_address = line_num_ofset;
+		line_data->decimal_address = IC;
 		line_data->line_word.data.data = *(begin_of_word + 1);
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		begin_of_word++;
-		line_num_ofset++;
+		IC++;
 	}
-	line_num_ofset--;
+	line_data = New(line_parse);
+	line_data->decimal_address = IC;
+	line_data->line_word.data.data = 0;
+	lines_data_list = list_append(lines_data_list, line_data);
+
+	begin_of_word++;
+	IC++;
 	return 0;
 }
 
