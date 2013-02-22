@@ -92,6 +92,12 @@ void parser_parse() {
 			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
 
 		}
+		
+		line_data = New(line_parse);
+		line_data->decimal_address = IC++;
+		line_data->line_word.data.data = 0;
+		line_data->label_to_extract = NULL;
+		lines_data_list = list_append(lines_data_list, line_data);
 
 		/* this is a data line */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
@@ -113,20 +119,12 @@ void parser_parse() {
 			continue;
 		}
 
-
 		/* this is an extern label declaration line */
 
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
 			continue;
 		}
-
-		line_data = New(line_parse);
-		line_data->decimal_address = IC;
-		line_data->line_word.data.data = 0;
-		line_data->label_to_extract = NULL;
-		lines_data_list = list_append(lines_data_list, line_data);
-		IC++;
 
 		/* this is a command line*/
 		if (strlen(line) > 80) {
