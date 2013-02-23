@@ -20,7 +20,7 @@ typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 /**
  *  Assembler instruction set.
  *  Addressing code are 0 not in use, 1 in use
- * source opperand and destination_opperand are 0 if not in use , and 1 if in use
+ * source operand and destination_operand are 0 if not in use , and 1 if in use
  */
 typedef struct {
 	unsigned int code :4;
@@ -33,8 +33,8 @@ typedef struct {
 	unsigned int destination_direct_addressing :1;
 	unsigned int destination_index_addressing :1;
 	unsigned int destination_direct_register_addressing :1;
-	unsigned int source_opperand :1;
-	unsigned int destination_opperand :1;
+	unsigned int source_operand :1;
+	unsigned int destination_operand :1;
 	char *instruction;
 } Instruction;
 

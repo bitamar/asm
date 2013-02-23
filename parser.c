@@ -35,7 +35,7 @@ void parser_parse() {
 		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
 
-	char* line, first_opperand[MAX_LABEL_SIZE + 1];
+	char* line, first_operand[MAX_LABEL_SIZE + 1];
 	Label* label;
 	line_parse* line_data;
 	char *begin_of_word, *end_of_word, command_type[7];
@@ -172,85 +172,74 @@ void parser_parse() {
 			}
 		}
 
-		/* verify blank after type */
+		/* Verify blank after type. */
 		if (!char_isblank(*end_of_word) && *end_of_word != '\0') {
 			error_set("Error", "Blank char is required after instruction.", line_num);
 			continue;
 		}
 
-		/* find first opperand */
-
+		/* Find the first operand. */
 		find_next_non_blank_char(end_of_word);
 
-
-		if (*end_of_word == '\0' && (instruction_list[i].source_opperand ||
-				instruction_list[i].destination_opperand)) {
-			printf("error at line number %d opperand expected after %s", line_num,
-					instruction_list[i].instruction);
+		if (*end_of_word == '\0' && (instruction_list[i].source_operand ||
+				instruction_list[i].destination_operand)) {
+			printf("error at line number %d operand expected after %s", line_num, instruction_list[i].instruction);
 			continue;
 		}
 
-		if (*end_of_word != '\0' && instruction_list[i].source_opperand == 0 &&
-				instruction_list[i].destination_opperand == 0) {
-
-			printf("error at line number %d no opperand expected after %s", line_num,
-					instruction_list[i].instruction);
+		if (*end_of_word != '\0' && instruction_list[i].source_operand == 0 && instruction_list[i].destination_operand == 0) {
+			printf("error at line number %d no operand expected after %s", line_num, instruction_list[i].instruction);
 			continue;
 		}
 
-		if (*end_of_word == '\0' && instruction_list[i].source_opperand == 0 &&
-				instruction_list[i].destination_opperand == 0) {
+		if (*end_of_word == '\0' && instruction_list[i].source_operand == 0 &&	instruction_list[i].destination_operand == 0) {
 			/* a command without oppenrand found */
 			printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
 			continue;
 		}
 
 		if (*end_of_word != '#' && !isalpha(*end_of_word)) {
-
-			printf("\nilegal parameter at line%d\n", line_num);
+			printf("\nIllegal parameter at line%d.\n", line_num);
 			continue;
 		}
 
 		j = 1;
 		while (isalnum(*end_of_word) && j <= MAX_OPERAND_SIZE) {
-			first_opperand[j - 1] = *end_of_word;
+			first_operand[j - 1] = *end_of_word;
 			end_of_word++;
 			j++;
 		}
 
 		if (j == MAX_OPERAND_SIZE) {
-			printf("error at line number %d ilegal opperand after %s", line_num,
-					instruction_list[i].instruction);
+			printf("Error at line number %d illegal operand after %s.", line_num, instruction_list[i].instruction);
 			continue;
 		}
 
-		first_opperand[j - 1] = '\0';
+		first_operand[j - 1] = '\0';
 		find_next_non_blank_char(end_of_word);
 		if (*end_of_word != '{' && *end_of_word != ',' && *end_of_word != '\0') {
-
-			printf("\nilegal parameter at line%d\n", line_num);
+			printf("\nIllegal parameter at line%d\n", line_num);
 			continue;
 		}
 
 		if (*end_of_word == '\0') {
-			/*there is only one parameter*/
-			if (!(instruction_list[i].source_opperand ^ instruction_list[i].destination_opperand)) {
-				printf("\nincompatble number of parameters %d\n", line_num);
+			/* There is only one parameter. */
+			if (!(instruction_list[i].source_operand ^ instruction_list[i].destination_operand)) {
+				printf("\nIncompatble number of parameters %d\n", line_num);
 				continue;
 			}
 
 			if (*end_of_word == '#')
-				/*addressing is value 0*/
-				data_number = extract_number(first_opperand, line_num);
-			/* else this is a label or register*/
-
+				/* Addressing is value 0. */
+				data_number = extract_number(first_operand, line_num);
+				/* Otherwise this is a label or register. */
 			continue;
 		}
 
 
 		find_next_non_blank_char(end_of_word);
 		if (*end_of_word != '\0' && *end_of_word != ',' && *end_of_word != '{') {
-			printf("error at line number %d ilegal opperand after %s", line_num,
+			printf("error at line number %d illegal operand after %s", line_num,
 					instruction_list[i].instruction);
 			continue;
 		}
@@ -258,7 +247,7 @@ void parser_parse() {
 		if (*end_of_word != '{') {
 
 			while (*end_of_word != ',' && !char_isblank(*end_of_word) && j <= MAX_OPERAND_SIZE) {
-				first_opperand[j - 1] = *end_of_word;
+				first_operand[j - 1] = *end_of_word;
 				end_of_word++;
 				j++;
 			}
