@@ -5,6 +5,8 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+#include <stdio.h>
+
 #define New(type) (type *)malloc(sizeof(type))
 
 #define MAX_LABEL_SIZE 30
@@ -12,7 +14,6 @@
 #define MAX_DATA_NUMBER 524287 
 /* =2^20-2^19 */
 #define MIN_DATA_NUMBER -524288 
-#define MAX_OPERAND_SIZE 63
 #define LINE_OFSET 100
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
@@ -24,7 +25,6 @@ typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
  * source operand and destination_operand are 0 if not in use , and 1 if in use
  */
 typedef struct {
-	unsigned int num_of_args :2;
 	unsigned int source_imidiat_addressing :1;
 	unsigned int source_direct_addressing :1;
 	unsigned int source_index_addressing :1;
@@ -72,7 +72,6 @@ typedef struct {
 	unsigned int line; 
 	unsigned int is_data :1; /* 1 for data 0 for instruction*/
 } Label;
-
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
