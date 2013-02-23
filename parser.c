@@ -68,19 +68,20 @@ void parser_parse() {
 			continue;
 		}
 
-		if (label->label) { /*find begining of next word after label */
+		/* Find beginning of next word after label. */
+		if (label->label) {
 			begin_of_word = line + strlen(label->label) + 1;
 			find_next_non_blank_char(begin_of_word);
 		}
 
 		if (*begin_of_word == '\0' && label->label) {
-			/*assuming every label declaration must folow instructions or declation of data */
-			error_set("Error", "label with no instrucion", line_num);
+			/* Assuming every label declaration must follow an instructions or declaration of data. */
+			error_set("Error", "Label with no instruction.", line_num);
 			free(label);
 			continue;
 		}
 
-		/* find end of command */
+		/* Find end of command. */
 		end_of_word = begin_of_word + 1;
 		while (!char_isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
@@ -99,13 +100,13 @@ void parser_parse() {
 		line_data->label_to_extract = NULL;
 		lines_data_list = list_append(lines_data_list, line_data);
 
-		/* this is a data line */
+		/* This is a data line. */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
 			extract_data_number(end_of_word + 1, line_num);
 			continue;
 		}
 
-		/* this is a string line */
+		/* This is a string line. */
 
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_string(end_of_word + 1, line_num, line);
@@ -113,20 +114,20 @@ void parser_parse() {
 		}
 
 
-		/* this is an entry label declaration line */
+		/* This is an entry label declaration line. */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_ENTRY);
 			continue;
 		}
 
-		/* this is an extern label declaration line */
+		/* This is an external label declaration line. */
 
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
 			continue;
 		}
 
-		/* this is a command line*/
+		/* This is a command line. */
 		if (strlen(line) > 80) {
 			error_set("Error", "line length exceeding 80 char", line_num);
 			continue;
@@ -459,7 +460,7 @@ int extract_label(char * begin_of_word, char *end_of_word, int const line_num, c
 	}
 
 
-	printf("\nthe label is %s\n", begin_of_word);
+	printf("\nThe label is %s\n", begin_of_word);
 
 	return 0;
 }
