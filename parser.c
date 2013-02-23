@@ -506,6 +506,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 		break;
 	case LINE_TYPE_EXTERN:
 		parser_extern_symbols = list_append(parser_extern_symbols, label);
+		break;
 	}
 }
 
