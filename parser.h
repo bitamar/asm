@@ -17,9 +17,10 @@
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
+
 /**
- *  Assembler instruction set.
- *  Addressing code are 0 not in use, 1 in use
+ * Assembler instruction set.
+ * Addressing code are 0 not in use, 1 in use
  * source operand and destination_operand are 0 if not in use , and 1 if in use
  */
 typedef struct {

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-List parser_symbols_list;
+List parser_symbols;
 List parser_extern_symbols;
 List parser_entry_symbols;
 List lines_data_list;
@@ -44,7 +44,7 @@ void parser_parse() {
 	long data_number;
 	void extract_data_number(char *, int);
 	int extract_string(char *, int, char *);
-	int extract_label(char*, char *, int, char *, LineType);
+	void extract_label(char*, char *, int, char *, LineType);
 	long extract_number(char *, int const);
 
 	while ((line = reader_get_line())) {
@@ -90,7 +90,7 @@ void parser_parse() {
 				|| (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/'))
 				&& label->label) {
 			label->is_data = 1;
-			parser_symbols_list = list_add_ordered(parser_symbols_list, label, &_parser_compare_labels, &_parser_duplicated_label);
+			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 
 		}
 		
@@ -194,7 +194,7 @@ void parser_parse() {
 		}
 
 		if (*end_of_word == '\0' && instruction_list[i].source_operand == 0 &&	instruction_list[i].destination_operand == 0) {
-			/* a command without oppenrand found */
+			/* Command without operand found. */
 			printf("\n%d label is %s command is %s line is %s\n", line_num, label->label, instruction_list[i].instruction, line);
 			continue;
 		}
@@ -258,8 +258,8 @@ void parser_parse() {
 		free(line);
 	}
 
-	/*error_print_list();*/
-	list_print(parser_symbols_list, &_parser_print_label);
+	/*list_print(parser_symbols, &_parser_print_label);*/
+	list_print(parser_entry_symbols, &_parser_print_label);
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -324,7 +324,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 	num_of_param = 0;
 	num_of_comma = 0;
-	printf("\nthis is a data line\n");
+	printf("\nData line\n");
 
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(begin_of_word);
@@ -336,7 +336,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 			continue;
 
 		if (*begin_of_word != '-' && *begin_of_word != '+' && !isdigit(*begin_of_word)) {
-			error_set("Error", "Data line contain illegal number", line_num);
+			error_set("Error", "Data line contains an illegal number.", line_num);
 			continue;
 		}
 
@@ -347,14 +347,14 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 		while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',') {
 			if (!isdigit(*end_of_word)) {
-				error_set("Error", "data line contain illegal number", line_num);
+				error_set("Error", "Data line contains an illegal number.", line_num);
 				continue;
 			}
 			else {
 				/* @TODO: Explain. */
 				data_number = 10 * data_number + *end_of_word - '0';
 				if ((*begin_of_word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
-					error_set("Error", "number is out of limit", line_num);
+					error_set("Error", "Number is out of limit.", line_num);
 					while (!char_isblank(*end_of_word) && *end_of_word != '\0' && *end_of_word != ',')
 						end_of_word++;
 
@@ -375,7 +375,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		num_of_param++;
 
 		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
-			printf("\n data is %ld\n", data_number);
+			printf("\nData is %ld\n", data_number);
 
 		find_next_non_blank_char(end_of_word);
 
@@ -410,7 +410,7 @@ int extract_string(char * begin_of_word, int const line_num, char * line) {
 		return 0;
 	}
 
-	printf("\nthis is a string line, the string is %s\n", begin_of_word);
+	printf("\nString line: The string is %s.\n", begin_of_word);
 	while (begin_of_word + 1 < end_of_word) {
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
@@ -430,14 +430,16 @@ int extract_string(char * begin_of_word, int const line_num, char * line) {
 	return 0;
 }
 
-int extract_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, LineType line_type) {
+void extract_label(char* begin_of_word, char* end_of_word, const int line_num, char * line, LineType line_type) {
+	Label* label;
+
 	begin_of_word = end_of_word;
 
 	find_next_non_blank_char(begin_of_word);
 
 	if (!isalpha(*begin_of_word)) {
 		error_set("Error", "Illegal label.", line_num);
-		return 0;
+		return;
 	}
 
 	end_of_word = line + strlen(line) - 1;
@@ -448,7 +450,7 @@ int extract_label(char * begin_of_word, char *end_of_word, int const line_num, c
 	/* check if label name is a register name*/
 	if ((end_of_word - begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word, "PC", 2) || !strncmp(begin_of_word, "SP", 2))) || (end_of_word - begin_of_word == 2 && !strncmp(begin_of_word, "PSW", 3))) {
 		error_set("Error", "Illegal label name, same as register.", line_num);
-		return 0;
+		return;
 	}
 
 	while (isalnum(*end_of_word))
@@ -456,13 +458,25 @@ int extract_label(char * begin_of_word, char *end_of_word, int const line_num, c
 
 	if (end_of_word > begin_of_word) {
 		error_set("Error", "Label expected.", line_num);
-		return 0;
+		return;
 	}
 
-
-	printf("\nThe label is %s\n", begin_of_word);
-
-	return 0;
+	/* Insert the label to the external labels list or to the entry labels list.
+	 */
+	label = New(Label);
+	label->line = line_num;
+	label->label = (char*)malloc(MAX_LABEL_SIZE + 1);
+	if (!label->label)
+		error_fatal(ErrorMemoryAlloc);
+	strcpy(label->label, begin_of_word);
+	switch (line_type) {
+	case LINE_TYPE_ENTRY:
+		parser_entry_symbols = list_append(parser_entry_symbols, label);
+		break;
+	case LINE_TYPE_EXTERN:
+		parser_extern_symbols = list_append(parser_extern_symbols, label);
+		break;
+	}
 }
 
 long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {

@@ -1,5 +1,5 @@
 program_NAME := asm
-CFLAGS += -ansi -pedantic -Wall
+CFLAGS += -ansi -pedantic -Wall -g -O0
 program_C_SRCS := $(wildcard *.c)
 program_CXX_SRCS := $(wildcard *.cpp)
 program_C_OBJS := ${program_C_SRCS:.c=.o}
