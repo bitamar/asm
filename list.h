@@ -1,3 +1,12 @@
+/*
+ * list.h
+ */
+
+#ifndef LIST_H_
+#define LIST_H_
+
+#include <stdio.h>
+
 /* List node pointer. */
 typedef struct _node* ListNodePtr;
 
@@ -46,10 +55,12 @@ List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(
  * 
  * @param list
  *   The list head.
+ * @param stream
+ *   File to print to.
  * @param _print
  *   Callback function for printing node's data.
  */
-void list_print(List list, void(*_print)(void*));
+void list_print(List list, FILE* stream, void(*_print)(void*, FILE*));
 
 /**
  * Free all the nodes and data from a list.
@@ -69,3 +80,5 @@ void list_destruct(List list);
  *   Pointer to the node.
  */
 ListNodePtr _list_create_node(void* data);
+
+#endif

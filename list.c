@@ -52,7 +52,7 @@ List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(
 	return list;
 } 
 
-void list_print(List list, void(*_print)(void*)) {
+void list_print(List list, FILE* stream, void(*_print)(void*, FILE*)) {
 	ListNodePtr p = list;
 	
 	if (!list)
@@ -60,7 +60,7 @@ void list_print(List list, void(*_print)(void*)) {
 	
 	/* Iterate the list calling _print for each node. */
 	do {		
-		_print(p->data);
+		_print(p->data, stream);
 	} while((p = p->next));
 }
 

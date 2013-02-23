@@ -17,22 +17,22 @@ int IC = LINE_OFSET; /* Instruction counter */
 
 void parser_parse() {
 	const Instruction instruction_list[] = {
-		{0, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
-		{1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
-		{2, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "add"},
-		{3, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "sub"},
-		{6, 2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, "lea"},
-		{4, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "not"},
-		{5, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "clr"},
-		{7, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "inc"},
-		{8, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "dec"},
-		{9, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "jmp"},
-		{10, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "bne"},
-		{11, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "red"},
-		{12, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, "prn"},
-		{13, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, "jsr"},
-		{14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
-		{15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
+		{2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
+		{2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
+		{2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "add"},
+		{2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "sub"},
+		{2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, "lea"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "not"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "clr"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "inc"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "dec"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "jmp"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "bne"},
+		{1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "red"},
+		{1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, "prn"},
+		{1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, "jsr"},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 	};
 
 	char* line, first_operand[MAX_LABEL_SIZE + 1];
@@ -107,12 +107,10 @@ void parser_parse() {
 		}
 
 		/* This is a string line. */
-
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_string(end_of_word + 1, line_num, line);
 			continue;
 		}
-
 
 		/* This is an entry label declaration line. */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
@@ -121,7 +119,6 @@ void parser_parse() {
 		}
 
 		/* This is an external label declaration line. */
-
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
 			continue;
@@ -259,7 +256,7 @@ void parser_parse() {
 	}
 
 	/*list_print(parser_symbols, &_parser_print_label);*/
-	list_print(parser_entry_symbols, &_parser_print_label);
+	/*list_print(parser_entry_symbols, &_parser_print_label);*/
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -300,6 +297,15 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
+void perser_output_ext_file() {
+	FILE* ext_file = fopen("file.ext", "w");
+	if (!ext_file) {
+		fprintf(stderr, ErrorCantRead, "file.ext");
+		exit(EXIT_FAILURE);
+	}
+	list_print(parser_extern_symbols, ext_file, &_parser_print_label);
+}
+
 int _parser_compare_labels(void* a, void* b) {
 	Label* label = a;
 	Label* label2 = b;
@@ -311,9 +317,9 @@ void _parser_duplicated_label(void* data) {
 	error_set("Error", "Redeclaring label.", label->line);
 }
 
-void _parser_print_label(void* data) {
+void _parser_print_label(void* data, FILE* stream) {
 	Label* label = data;
-	printf("%d: %s\n", label->line, label->label);
+	fprintf(stream, "%d: %s\n", label->line, label->label);
 }
 
 void extract_data_number(char * begin_of_word, int const line_num) {

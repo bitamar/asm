@@ -1,7 +1,5 @@
 /*
  * reader.c
- *
- *	Required by: 
  */
 
 #include "error.h"

@@ -24,7 +24,6 @@ typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
  * source operand and destination_operand are 0 if not in use , and 1 if in use
  */
 typedef struct {
-	unsigned int code :4;
 	unsigned int num_of_args :2;
 	unsigned int source_imidiat_addressing :1;
 	unsigned int source_direct_addressing :1;
@@ -73,11 +72,17 @@ typedef struct {
 	unsigned int line; 
 	unsigned int is_data :1; /* 1 for data 0 for instruction*/
 } Label;
+
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
  */
 void parser_parse();
+
+/**
+ * Create the external symbols file.
+ */
+void perser_output_ext_file();
 
 /**
  * Check whether a line starts with a label.
@@ -114,7 +119,9 @@ void _parser_duplicated_label(void* data);
  * 
  * @param data
  *   Pointer to label.
+ * @param stream
+ *   File to write to.
  */
-void _parser_print_label(void* data);
+void _parser_print_label(void* data, FILE* stream);
 
 #endif /* PARSER_H_ */

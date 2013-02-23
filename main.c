@@ -18,6 +18,8 @@ int main(int argc, char* argv[]) {
 
 		parser_parse();
 
+		perser_output_ext_file();
+
 		reader_close_file();
 	}
 
