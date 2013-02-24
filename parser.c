@@ -538,8 +538,7 @@ int extract_operand(char *operand,int i,int line_num ) {
 	int j;
 
 	if (*end_of_word != '#' && !isalpha(*end_of_word)) {
-
-		printf("\nilegal parameter at line %d\n", line_num);
+		error_set("Error", "Illegal parameter.", line_num);
 		return 0;
 	}
 
@@ -552,19 +551,16 @@ int extract_operand(char *operand,int i,int line_num ) {
 		j++;
 	}
 
-	if (j == MAX_LABEL_SIZE+1) {
-		printf("error at line number %d ilegal operand after %s", line_num,
-				instruction_list[i].instruction);
+	if (j == MAX_LABEL_SIZE + 1) {
+		error_set("Error", "Illegal operand.", line_num);
 		return 0;
-		}
+	}
 
 	operand[j] = '\0';
 
-	/* assumind no white chars at middle of opperan*/
-	if ((*end_of_word != '{' && *end_of_word != ',' && *end_of_word != '\0' && !char_isblank(*end_of_word)) || 
-	    (operand[0]=='#' && *end_of_word == '{')) {
-
-		printf("\nilegal parameter at line%d\n",line_num);
+	/* Assuming no white chars at middle of operand. */
+	if ((*end_of_word != '{' && *end_of_word != ',' && *end_of_word != '\0' && !char_isblank(*end_of_word)) || (operand[0] == '#' && *end_of_word == '{')) {
+		error_set("Error", "Illegal parameter.", line_num);
 		return 0;
 	}
 	return 1;
@@ -572,7 +568,7 @@ int extract_operand(char *operand,int i,int line_num ) {
 
 int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	int j;
-	/* extracting offset for first parameter if any */
+	/* Extracting offset for first parameter if any. */
 
 	end_of_word++;
 
@@ -584,8 +580,7 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	}
 
 	if (j == MAX_LABEL_SIZE+1 || *end_of_word!='}') {	
-		printf("error at line number %d ilegal operand after %s", line_num,
-				instruction_list[i].instruction);
+		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
 
@@ -661,9 +656,8 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 			break;
 
 		case 1:
-			if ((!instruction_list[i].source_direct_addressing && work_on_source)
-			    || (!instruction_list[i].destination_direct_addressing && !work_on_source)) {
-				printf("\nerror at line number %d ilegal addressing\n", line_num);	
+			if ((!instruction_list[i].source_direct_addressing && work_on_source) || (!instruction_list[i].destination_direct_addressing && !work_on_source)) {
+				error_set("Error", "Illegal addressing.", line_num);
 				return 0;
 			}
 			line_data = New(line_parse);
@@ -671,8 +665,8 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 			line_data->line_word.data=0;
 			lines_data_list = list_append(lines_data_list, line_data);
 			IC++;
-			line_data->label_to_extract=(char *)malloc(strlen(operand)+1);
-			strcpy(line_data->label_to_extract,operand);
+			line_data->label_to_extract=(char *)malloc(strlen(operand) + 1);
+			strcpy(line_data->label_to_extract, operand);
 			break;
 
 		case 2:
@@ -700,7 +694,7 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 					return 0;
 				}
 			}
-			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 &&	*(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
+			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
 				line_data = New(line_parse);
 				line_data->decimal_address = IC;
 				line_data->line_word.data = 0;
@@ -709,7 +703,6 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 				line_data->label_to_extract=(char *)malloc(strlen(operand_offset)+1);
 				strcpy(line_data->label_to_extract,operand_offset);
 			}
-
 			break;
 
 		case 3:
