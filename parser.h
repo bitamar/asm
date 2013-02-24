@@ -49,13 +49,9 @@ typedef struct {
 	unsigned int unused :3;
 } instruction_word; 
 
-typedef struct {
-	unsigned long data;
-} data_word;
-
 typedef union { 
 	instruction_word inst;
-	data_word data;
+	unsigned long data;
 } word;
 
 typedef struct {
@@ -81,7 +77,7 @@ void parser_parse();
 /**
  * Create the external symbols file.
  */
-void perser_output_ext_file();
+void parser_output_ext_file();
 
 /**
  * Check whether a line starts with a label.

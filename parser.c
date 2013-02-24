@@ -102,46 +102,39 @@ void parser_parse() {
 
 		}			
 
-		/* this is a data line */
+		/* Data line. */
 		if (!strncmp(begin_of_word, ".data", 5) && (end_of_word - begin_of_word) == 5 && *end_of_word != '/') {
-			
 			extract_data_number(end_of_word, line_num);
 			continue;
 		}
 
-		/* this is a string line */
-
+		/* String line. */
 		if (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_string(end_of_word, line_num, line);
 			continue;
 		}
 
-
-		/* this is an entry label declaration line */
+		/* Entry label declaration line. */
 		if (!strncmp(begin_of_word, ".entry", 6) && (end_of_word - begin_of_word) == 6 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_ENTRY);
-
 			continue;
 		}
 
 
-		/* this is an extern label declaration line */
-
+		/* External label declaration line. */
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
-
 			continue;
 		}
 
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
-		line_data->line_word.data.data = 0;
+		line_data->line_word.data = 0;
 		line_data->label_to_extract = NULL;
 		lines_data_list = list_append(lines_data_list, line_data);
 		IC++;
 
-		/* this is a command line*/
-
+		/* Command line. */
 		label->is_data = 0;
 
 		if(label->label) 
@@ -149,15 +142,13 @@ void parser_parse() {
 		
 		
 		if (strlen(line) > 80) {
-			error_set("Error", "line length exceeding 80 char", line_num);
-
+			error_set("Error", "Line length exceeding 80 characters.", line_num);
 			continue;
 		}
 
 		for (i = 0; i < 16 && strncmp(begin_of_word, instruction_list[i].instruction, end_of_word - begin_of_word); i++);
 		if (i == 16) {
-			error_set("Error", "Unknown instruction", line_num);
-
+			error_set("Error", "Unknown instruction.", line_num);
 			continue;
 		}
 
@@ -320,7 +311,7 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
-void perser_output_ext_file() {
+void parser_output_ext_file() {
 	FILE* ext_file = fopen("file.ext", "w");
 	if (!ext_file) {
 		fprintf(stderr, ErrorCantRead, "file.ext");
@@ -398,7 +389,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
-		line_data->line_word.data.data = data_number;
+		line_data->line_word.data = data_number;
 		lines_data_list = list_append(lines_data_list, line_data);
 		IC++;
 		num_of_param++;
@@ -443,7 +434,7 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 	while (begin_of_word + 1 < end_of_word) {
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
-		line_data->line_word.data.data = *(begin_of_word + 1);
+		line_data->line_word.data = *(begin_of_word + 1);
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		begin_of_word++;
@@ -452,7 +443,7 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 			
 	line_data = New(line_parse);
 	line_data->decimal_address = IC;
-	line_data->line_word.data.data = 0;
+	line_data->line_word.data = 0;
 	lines_data_list = list_append(lines_data_list, line_data);
 	IC++;
 		
@@ -604,46 +595,44 @@ int extract_operand_ofset(char * operand_ofset,int i,int line_num) {
 }
 
 int update_operand(char *operand,char *operand_ofset,int work_on_source) {
-	/*index_addressing*/
-	if (*operand_ofset!='\0') {
-		if (work_on_source==1) {
-			line_data->line_word.inst.source_addressing=2;
-			if (*operand_ofset=='r' && operand_ofset[1]>='0' && operand_ofset[1]<='7'
-			    && strlen(operand_ofset)==2)
-				line_data->line_word.inst.source_register=operand_ofset[1]-'0';
-			
+	/* Index addressing. */
+	if (*operand_ofset != '\0') {
+		if (work_on_source == 1) {
+			line_data->line_word.inst.source_addressing = 2;
+			if (*operand_ofset == 'r' && operand_ofset[1] >= '0' && operand_ofset[1] <= '7' && strlen(operand_ofset) == 2)
+				line_data->line_word.inst.source_register = operand_ofset[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.destination_addressing=2;
-			if (*operand_ofset=='r' && operand_ofset[1]>='0' && operand_ofset[1]<='7'
-			    && strlen(operand_ofset)==2)
-				line_data->line_word.inst.destination_register=operand_ofset[1]-'0';
+			line_data->line_word.inst.destination_addressing = 2;
+			if (*operand_ofset == 'r' && operand_ofset[1] >= '0' && operand_ofset[1] <= '7' && strlen(operand_ofset) == 2)
+				line_data->line_word.inst.destination_register = operand_ofset[1] - '0';
 		}
 		return 0;
 	}
 
-	/*register addressing*/
-	if (*operand=='r' && operand[1]>='0' && operand[1]<='7' && strlen(operand)==2) {
-		if (work_on_source==1) {
-			line_data->line_word.inst.source_addressing=3;
-			line_data->line_word.inst.source_register=operand[1]-'0';
+	/* Register addressing. */
+	if (*operand == 'r' && operand[1] >= '0' && operand[1] <= '7' && strlen(operand) == 2) {
+		if (work_on_source == 1) {
+			line_data->line_word.inst.source_addressing = 3;
+			line_data->line_word.inst.source_register = operand[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.destination_addressing=3;
-			line_data->line_word.inst.destination_register=operand[1]-'0';
+			line_data->line_word.inst.destination_addressing = 3;
+			line_data->line_word.inst.destination_register = operand[1] - '0';
 		}
 		return 0;
 	}
 
-	/*direct addressing*/
-	if (*operand!='#') {
-		if (work_on_source==1) 
-			line_data->line_word.inst.source_addressing=1;
+	/* Direct addressing. */
+	if (*operand != '#') {
+		if (work_on_source == 1)
+			line_data->line_word.inst.source_addressing = 1;
 		else 
-			line_data->line_word.inst.destination_addressing=1;
+			line_data->line_word.inst.destination_addressing = 1;
 		return 0;
 	}
-	/*for imediat addressing it is allready 0*/
+
+	/* For immediate addressing it is already 0. */
 	return 0;
 }
 
@@ -656,11 +645,9 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 		addressing=line_data->line_word.inst.destination_addressing;
 
 	switch (addressing) {
-
 		case 0: 
-			if ((!instruction_list[i].source_imidiat_addressing && work_on_source)
-			    || (!instruction_list[i].destination_imidiat_addressing && !work_on_source)) {
-				printf("\nerror at line number %d ilegal addressing\n", line_num);	
+			if ((!instruction_list[i].source_imidiat_addressing && work_on_source) || (!instruction_list[i].destination_imidiat_addressing && !work_on_source)) {
+				error_set("Error", "Illegal addressing\n", line_num);
 				return 0;
 			}
 			line_data = New(line_parse);
@@ -669,7 +656,7 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 			lines_data_list = list_append(lines_data_list, line_data);
 			IC++;
 
-			if((line_data->line_word.data.data=extract_number(&operand[1], line_num))==999999)
+			if((line_data->line_word.data = extract_number(&operand[1], line_num))==999999)
 				return 0;
 			break;
 
@@ -681,7 +668,7 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 			}
 			line_data = New(line_parse);
 			line_data->decimal_address = IC;
-			line_data->line_word.data.data=0;
+			line_data->line_word.data=0;
 			lines_data_list = list_append(lines_data_list, line_data);
 			IC++;
 			line_data->label_to_extract=(char *)malloc(strlen(operand)+1);
@@ -689,18 +676,17 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 			break;
 
 		case 2:
-			if ((!instruction_list[i].source_index_addressing && work_on_source)
-			    || (!instruction_list[i].destination_index_addressing && !work_on_source)) {
-				printf("\nerror at line number %d ilegal addressing\n", line_num);	
+			if ((!instruction_list[i].source_index_addressing && work_on_source) || (!instruction_list[i].destination_index_addressing && !work_on_source)) {
+				error_set("Error", "Illegal addressing.", line_num);
 				return 0;
 			}
 			line_data = New(line_parse);
 			line_data->decimal_address = IC;
-			line_data->line_word.data.data=0;
+			line_data->line_word.data = 0;
 			lines_data_list = list_append(lines_data_list, line_data);
 			IC++;
-			line_data->label_to_extract=(char *)malloc(strlen(operand)+1);
-			strcpy(line_data->label_to_extract,operand);
+			line_data->label_to_extract = (char *)malloc(strlen(operand) + 1);
+			strcpy(line_data->label_to_extract, operand);
 
 			if (isdigit(*operand_ofset)) {
 				line_data = New(line_parse);
@@ -709,34 +695,30 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 				lines_data_list = list_append(lines_data_list, line_data);
 				IC++;
 
-				if((line_data->line_word.data.data=extract_number(operand_ofset, line_num))==999999) {
-					printf("\nerror at line number %d ilegal addressing\n", line_num);	
+				if((line_data->line_word.data = extract_number(operand_ofset, line_num)) == 999999) {
+					error_set("Error", "Illegal addressing.", line_num);
 					return 0;
 				}
 			}
-			else if (!(*operand_ofset=='r' && strlen(operand_ofset)==2 &&
-				*(operand_ofset+1)>='0' && *(operand_ofset+1)<='7')) {
-						
+			else if (!(*operand_ofset == 'r' && strlen(operand_ofset) == 2 &&	*(operand_ofset + 1) >= '0' && *(operand_ofset + 1) <= '7')) {
 				line_data = New(line_parse);
 				line_data->decimal_address = IC;
-				line_data->line_word.data.data=0;
+				line_data->line_word.data = 0;
 				lines_data_list = list_append(lines_data_list, line_data);
 				IC++;
 				line_data->label_to_extract=(char *)malloc(strlen(operand_ofset)+1);
 				strcpy(line_data->label_to_extract,operand_ofset);
-
 			}
 
 			break;
 
 		case 3:
-			if  ((!instruction_list[i].source_direct_register_addressing && work_on_source)
-			    || (!instruction_list[i].destination_direct_register_addressing && !work_on_source)) {
-				printf("\nerror at line number %d ilegal addressing\n", line_num);	
+			if  ((!instruction_list[i].source_direct_register_addressing && work_on_source) || (!instruction_list[i].destination_direct_register_addressing && !work_on_source)) {
+				error_set("Error", "Illegal addressing.", line_num);
 				return 0;
 			}
 			break;
 		}
 
-return 1;
+	return 1;
 }
