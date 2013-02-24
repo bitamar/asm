@@ -12,7 +12,9 @@ List parser_symbols;
 List parser_extern_symbols;
 List parser_entry_symbols;
 List lines_data_list;
+
 line_parse* line_data;
+
 int IC = LINE_OFSET; /* Instruction counter */
 
 const Instruction instruction_list[] = {
@@ -33,11 +35,12 @@ const Instruction instruction_list[] = {
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
 };
-char * end_of_word;
+
+char* end_of_word;
+
 void parser_parse() {
 
-	char* line, operand1[MAX_LABEL_SIZE + 1],operand1_ofset[MAX_LABEL_SIZE + 1],
-		operand2[MAX_LABEL_SIZE + 1],operand2_ofset[MAX_LABEL_SIZE + 1];
+	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_ofset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_ofset[MAX_LABEL_SIZE + 1];
 	Label* label;
 	
 	char *begin_of_word, command_type[7];
@@ -421,7 +424,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 	}
 }
 
-int extract_string(char * begin_of_word, int const line_num, char * line) {
+int extract_string(char* begin_of_word, int const line_num, char* line) {
 	line_parse* line_data;
 	char * end_of_word;
 	find_next_non_blank_char(begin_of_word);

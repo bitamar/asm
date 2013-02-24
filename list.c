@@ -1,5 +1,6 @@
 #include "error.h"
 #include "list.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 List list_append(List list, void* data) {
