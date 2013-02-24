@@ -9,36 +9,49 @@
 #include <string.h>
 
 FILE* reader_file;
-char* reader_file_name;
+/* The name of the file being currently read, without extension. */
+char* reader_file_name_base;
 
 /**
  * Open a file for reading.
  * Store the file pointer in the reader's global variable.
  */
 void reader_open_file(const char* file_name) {
-	int len;
-	
+	unsigned int len;
+	char* full_file_name;
 	/* Create a string with the file name and extension. */
 	len = strlen(file_name);
-	reader_file_name = (char*)malloc(len + ReaderFileExtensionLength + 1);
-	if (!reader_file_name)
+	reader_file_name_base = (char*)malloc(len + 1);
+	if (!reader_file_name_base)
 		error_fatal(ErrorMemoryAlloc);
+	strcpy(reader_file_name_base, file_name);
 
-	strcpy(reader_file_name, file_name);
-	/* Add the file extension. */
-	reader_file_name[len] = '.';
-	strcpy(reader_file_name + len + 1, ReaderFileExtension);
-	reader_file_name[len + ReaderFileExtensionLength + 1] = '\0';
+	full_file_name = reader_get_file_name(ReaderFileExtension);
+	reader_file = fopen(full_file_name, "r");
 
-	reader_file = fopen(reader_file_name, "r");
 	if (!reader_file) {
-		fprintf(stderr, ErrorCantRead, reader_file_name);
+		fprintf(stderr, ErrorCantRead, full_file_name);
+		free(full_file_name);
 		exit(EXIT_FAILURE);
 	}
+	free(full_file_name);
 }
 
-char* reader_get_file_name() {
-	return reader_file_name;
+char* reader_get_file_name(const char* extension) {
+	char* file_name;
+	unsigned int full_length, base_length = strlen(reader_file_name_base);
+	full_length = base_length + strlen(extension) + 1;
+	file_name = (char*)malloc(full_length);
+	if (!file_name)
+		error_fatal(file_name);
+
+	strcpy(file_name, reader_file_name_base);
+	/* Add the file extension. */
+	file_name[base_length] = '.';
+	strcpy(file_name + base_length + 1, extension);
+	file_name[full_length] = '\0';
+
+	return file_name;
 }
 
 /**

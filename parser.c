@@ -568,6 +568,7 @@ int extract_operand(char *operand,int i,int line_num ) {
 
 int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	int j;
+
 	/* Extracting offset for first parameter if any. */
 
 	end_of_word++;
@@ -679,7 +680,7 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 			line_data->line_word.data = 0;
 			lines_data_list = list_append(lines_data_list, line_data);
 			IC++;
-			line_data->label_to_extract = (char *)malloc(strlen(operand) + 1);
+			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 
 			if (isdigit(*operand_offset)) {
@@ -700,8 +701,8 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 				line_data->line_word.data = 0;
 				lines_data_list = list_append(lines_data_list, line_data);
 				IC++;
-				line_data->label_to_extract=(char *)malloc(strlen(operand_offset)+1);
-				strcpy(line_data->label_to_extract,operand_offset);
+				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
+				strcpy(line_data->label_to_extract, operand_offset);
 			}
 			break;
 

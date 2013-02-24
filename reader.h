@@ -9,8 +9,6 @@
 
 #define ReaderFileExtension "as"
 
-#define ReaderFileExtensionLength 2
-
 /**
  * Open a file for reading.
  */
@@ -23,8 +21,10 @@ void reader_close_file();
 
 /**
  * Get the currenly open file's name.
+ * @param extension
+ *   Extension to attach to the file name.
  */
-char* reader_get_file_name();
+char* reader_get_file_name(const char* extension);
 
 /**
  * Read the next line from a file.
