@@ -75,7 +75,8 @@ void parser_parse() {
 			continue;
 		}
 
-		if (label->label) { /*find begining of next word after label */		
+		/* Find beginning of next word after label. */
+		if (label->label) {
 			begin_of_word = line + strlen(label->label) + 1;
 			find_next_non_blank_char(begin_of_word);
 		}
@@ -119,7 +120,6 @@ void parser_parse() {
 			continue;
 		}
 
-
 		/* External label declaration line. */
 		if (!strncmp(begin_of_word, ".extern", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/') {
 			extract_label(begin_of_word, end_of_word, line_num, line, LINE_TYPE_EXTERN);
@@ -138,7 +138,6 @@ void parser_parse() {
 
 		if(label->label) 
 			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
-		
 		
 		if (strlen(line) > 80) {
 			error_set("Error", "Line length exceeding 80 characters.", line_num);
@@ -182,7 +181,6 @@ void parser_parse() {
 					(command_type[5] == '0' || command_type[5] == '1') &&
 					(command_type[3] == '0' || command_type[3] == '1'))) {
 				error_set("Error", "Illegal command type", line_num);
-
 				continue;
 			}
 			
@@ -193,7 +191,6 @@ void parser_parse() {
 		/* Verify blank after type. */
 		if (!char_isblank(*end_of_word) && *end_of_word != '\0') {
 			error_set("Error", "Blank char is required after instruction.", line_num);
-
 			continue;
 		}
 
@@ -207,6 +204,7 @@ void parser_parse() {
 		if (*end_of_word!='\0') {
 			if (!extract_operand(operand1, i, line_num))
 				continue;
+
 			if (*end_of_word == '{')
 				if (!extract_operand_offset(operand1_offset, i, line_num))
 					continue;
@@ -219,6 +217,7 @@ void parser_parse() {
 			find_next_non_blank_char(end_of_word);
 			if (!extract_operand(operand2, i, line_num))
 				continue;
+
 			if (*end_of_word == '{')
 				if (!extract_operand_offset(operand2_offset, i, line_num))
 					continue;
@@ -311,11 +310,14 @@ char* parser_get_label(const char* line, int line_num) {
 }
 
 void parser_output_ext_file() {
-	FILE* ext_file = fopen("file.ext", "w");
+	char* file_name = reader_get_file_name("ext");
+	FILE* ext_file = fopen(file_name, "w");
 	if (!ext_file) {
-		fprintf(stderr, ErrorCantRead, "file.ext");
+		fprintf(stderr, ErrorCantRead, file_name);
+		free(file_name);
 		exit(EXIT_FAILURE);
 	}
+	free(file_name);
 	list_print(parser_extern_symbols, ext_file, &_parser_print_label);
 }
 
@@ -343,7 +345,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 	num_of_param = 0;
 	num_of_comma = 0;
-	printf("\nthis is a data line\n");
+	printf("Data line\n");
 
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(begin_of_word);
@@ -514,7 +516,7 @@ long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 
 	while (number[k] != '\0') {
 		if (!isdigit(number[k])) {
-			error_set("Error", "Illegal number after #.", line_num);
+			error_set("Error", "Illegal number.", line_num);
 			return 999999;
 		} 
 		
@@ -542,7 +544,7 @@ int extract_operand(char *operand,int i,int line_num ) {
 		return 0;
 	}
 
-	*operand=*end_of_word;
+	*operand = *end_of_word;
 	end_of_word++;
 	j = 1;
 	while (isalnum(*end_of_word) && j <= MAX_LABEL_SIZE) {	
@@ -643,7 +645,7 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 	switch (addressing) {
 		case 0: 
 			if ((!instruction_list[i].source_imidiat_addressing && work_on_source) || (!instruction_list[i].destination_imidiat_addressing && !work_on_source)) {
-				error_set("Error", "Illegal addressing\n", line_num);
+				error_set("Error", "Illegal addressing.", line_num);
 				return 0;
 			}
 			line_data = New(line_parse);
