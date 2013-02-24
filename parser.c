@@ -162,7 +162,7 @@ void parser_parse() {
 		}
 
 		line_data->line_word.inst.opcode = i;
-		/* find '/0' or /1 , asuming /0 is not folowed by other options */
+		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
 		find_next_non_blank_char(end_of_word);
 		command_type[0] = *end_of_word;
 		if (*end_of_word != '\0') {
@@ -173,7 +173,6 @@ void parser_parse() {
 		}
 		if (!(command_type[0] == '/' && (command_type[1] == '0' || command_type[1] == '1'))) {
 			error_set("Error", "Type expected after instruction.", line_num);
-
 			continue;
 		}
 
@@ -197,89 +196,85 @@ void parser_parse() {
 				continue;
 			}
 			
-			line_data->line_word.inst.type=command_type[1]-'0';
-			line_data->line_word.inst.comb=command_type[5]-'0'+2*(command_type[3]-'0');
+			line_data->line_word.inst.type = command_type[1] - '0';
+			line_data->line_word.inst.comb = command_type[5] - '0' + 2 * (command_type[3] - '0');
 		}
 
-		/* verify blank after type */
+		/* Verify blank after type. */
 		if (!char_isblank(*end_of_word) && *end_of_word != '\0') {
 			error_set("Error", "Blank char is required after instruction.", line_num);
 
 			continue;
 		}
 
-		/* find operands */
-		operand1[0]='\0';
-		operand2[0]='\0';
-		operand1_ofset[0]='\0';
-		operand2_ofset[0]='\0';
+		/* Find operands. */
+		operand1[0] = '\0';
+		operand2[0] = '\0';
+		operand1_ofset[0] = '\0';
+		operand2_ofset[0] = '\0';
 		find_next_non_blank_char(end_of_word);
 
 		if (*end_of_word!='\0') {
-			if (!extract_operand(operand1,i,line_num))
+			if (!extract_operand(operand1, i, line_num))
 				continue;
-			if (*end_of_word=='{')
-				if (!extract_operand_ofset(operand1_ofset,i,line_num))
+			if (*end_of_word == '{')
+				if (!extract_operand_ofset(operand1_ofset, i, line_num))
 					continue;
 		}
 
 		find_next_non_blank_char(end_of_word);
 		
-		if (*end_of_word==',') {
-			
+		if (*end_of_word == ',') {
 			end_of_word++;
 			find_next_non_blank_char(end_of_word);
-			if (!extract_operand(operand2,i,line_num))
+			if (!extract_operand(operand2, i, line_num))
 				continue;
-			if (*end_of_word=='{')
-				if (!extract_operand_ofset(operand2_ofset,i,line_num))
+			if (*end_of_word == '{')
+				if (!extract_operand_ofset(operand2_ofset, i, line_num))
 					continue;
 		}
 
 		find_next_non_blank_char(end_of_word);
 
-		if (*end_of_word!='\0'
-		    || (*operand1=='#' && *operand1_ofset!='\0') || (*operand2=='#' && *operand2_ofset!='\0')) {
-			printf("error at line number %d ilegal parameters", line_num);		
+		if (*end_of_word != '\0' || (*operand1 == '#' && *operand1_ofset != '\0') || (*operand2 == '#' && *operand2_ofset != '\0')) {
+			error_set("Error", "Illegal parameters.", line_num);
 			continue;
 		}
 
-		/* chech when no operand required */
-		if (!instruction_list[i].source_operand && !instruction_list[i].destination_operand && *operand1!='\0') {
-			printf("error at line number %d no operands required", line_num);
+		/* No operand required. */
+		if (!instruction_list[i].source_operand && !instruction_list[i].destination_operand && *operand1 != '\0') {
+			error_set("Error", "No operands required", line_num);
 			continue;
 		}
 
-		/* chech when one operand required */
-		if (!instruction_list[i].source_operand && instruction_list[i].destination_operand &&
-		    (*operand1=='\0' || *operand2!='\0' )) {
-			printf("\nerror at line number %d ilegal number of operands, required 1\n", line_num);
+		/* One operand required. */
+		if (!instruction_list[i].source_operand && instruction_list[i].destination_operand && (*operand1 == '\0' || *operand2 != '\0')) {
+			error_set("Error", "Exactly one operand required.", line_num);
 			continue;
 		}
 
-		/* chech when two operand required */
-		if (instruction_list[i].source_operand && instruction_list[i].destination_operand &&
-		    (*operand1=='\0' || *operand2=='\0' )) {
-			printf("\nerror at line number %d ilegal number of operands, required 2\n", line_num);
+		/* Two operand required */
+		if (instruction_list[i].source_operand && instruction_list[i].destination_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
+			error_set("Error", "Two operands required.", line_num);
 			continue;
 		}
 
-		/* addressing dealing */
-
-		/* when two operand exists*/
-		if (*operand2!='\0') {
-			update_operand(operand1,operand1_ofset,1);
-			update_operand(operand1,operand1_ofset,0);
-			if (!add_operand_lines (operand1,operand1_ofset,1,i,line_num))
+		/* Handling addressing. */
+		/* Two operand exist. */
+		if (*operand2 != '\0') {
+			update_operand(operand1, operand1_ofset, 1);
+			update_operand(operand1, operand1_ofset, 0);
+			if (!add_operand_lines(operand1, operand1_ofset, 1, i, line_num))
 				continue;
-			if (!add_operand_lines (operand2,operand2_ofset,0,i,line_num))
+
+			if (!add_operand_lines(operand2, operand2_ofset, 0, i, line_num))
 				continue;
 		}
 
 		/* when one operand exists*/
-		if (*operand1!='\0' && *operand2=='\0') {
-			update_operand(operand1,operand1_ofset,0);
-			if (!add_operand_lines (operand1,operand1_ofset,0,i,line_num))
+		if (*operand1 != '\0' && *operand2 == '\0') {
+			update_operand(operand1, operand1_ofset, 0);
+			if (!add_operand_lines (operand1, operand1_ofset, 0, i, line_num))
 				continue;
 		}
 		
