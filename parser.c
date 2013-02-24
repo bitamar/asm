@@ -15,7 +15,7 @@ List lines_data_list;
 
 line_parse* line_data;
 
-int IC = LINE_OFSET; /* Instruction counter */
+int IC = LINE_OFFSET; /* Instruction counter */
 
 const Instruction instruction_list[] = {
 	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
@@ -40,7 +40,7 @@ char* end_of_word;
 
 void parser_parse() {
 
-	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_ofset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_ofset[MAX_LABEL_SIZE + 1];
+	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label;
 	
 	char *begin_of_word, command_type[7];
@@ -50,7 +50,7 @@ void parser_parse() {
 	void extract_label(char * begin_of_word, char *end_of_word, int const line_num, char * line, LineType line_type);
 	long extract_number(char *, int const);
 	int extract_operand(char *,int i,int line_num );
-	int extract_operand_ofset(char * ,int i,int line_num);
+	int extract_operand_offset(char * ,int i,int line_num);
 	int update_operand(char *,char *,int);
 	int add_operand_lines (char *,char *,int,int,int);
 
@@ -81,8 +81,9 @@ void parser_parse() {
 		}
 
 		if (*begin_of_word == '\0' && label->label) {
-			/*assuming every label declaration must folow instructions or declation of data */
-			error_set("Error", "label with no instrucion", line_num); 
+			/* Assuming every label declaration must follow instructions or
+			 * declaration of data. */
+			error_set("Error", "Label with no instruction", line_num);
 			free (label);
 			continue;
 		}
@@ -98,8 +99,6 @@ void parser_parse() {
 			label->is_data = 1;
 
 			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
-
-
 		}			
 
 		/* Data line. */
@@ -201,15 +200,15 @@ void parser_parse() {
 		/* Find operands. */
 		operand1[0] = '\0';
 		operand2[0] = '\0';
-		operand1_ofset[0] = '\0';
-		operand2_ofset[0] = '\0';
+		operand1_offset[0] = '\0';
+		operand2_offset[0] = '\0';
 		find_next_non_blank_char(end_of_word);
 
 		if (*end_of_word!='\0') {
 			if (!extract_operand(operand1, i, line_num))
 				continue;
 			if (*end_of_word == '{')
-				if (!extract_operand_ofset(operand1_ofset, i, line_num))
+				if (!extract_operand_offset(operand1_offset, i, line_num))
 					continue;
 		}
 
@@ -221,13 +220,13 @@ void parser_parse() {
 			if (!extract_operand(operand2, i, line_num))
 				continue;
 			if (*end_of_word == '{')
-				if (!extract_operand_ofset(operand2_ofset, i, line_num))
+				if (!extract_operand_offset(operand2_offset, i, line_num))
 					continue;
 		}
 
 		find_next_non_blank_char(end_of_word);
 
-		if (*end_of_word != '\0' || (*operand1 == '#' && *operand1_ofset != '\0') || (*operand2 == '#' && *operand2_ofset != '\0')) {
+		if (*end_of_word != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
 			error_set("Error", "Illegal parameters.", line_num);
 			continue;
 		}
@@ -253,23 +252,23 @@ void parser_parse() {
 		/* Handling addressing. */
 		/* Two operand exist. */
 		if (*operand2 != '\0') {
-			update_operand(operand1, operand1_ofset, 1);
-			update_operand(operand1, operand1_ofset, 0);
-			if (!add_operand_lines(operand1, operand1_ofset, 1, i, line_num))
+			update_operand(operand1, operand1_offset, 1);
+			update_operand(operand1, operand1_offset, 0);
+			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num))
 				continue;
 
-			if (!add_operand_lines(operand2, operand2_ofset, 0, i, line_num))
+			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num))
 				continue;
 		}
 
 		/* when one operand exists*/
 		if (*operand1 != '\0' && *operand2 == '\0') {
-			update_operand(operand1, operand1_ofset, 0);
-			if (!add_operand_lines (operand1, operand1_ofset, 0, i, line_num))
+			update_operand(operand1, operand1_offset, 0);
+			if (!add_operand_lines (operand1, operand1_offset, 0, i, line_num))
 				continue;
 		}
 		
-		printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_ofset,operand2,operand2_ofset, line);
+		printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_offset,operand2,operand2_offset, line);
 	}
 
 	list_print(parser_symbols, stdout, &_parser_print_label);
@@ -570,15 +569,16 @@ int extract_operand(char *operand,int i,int line_num ) {
 	}
 	return 1;
 }
-int extract_operand_ofset(char * operand_ofset,int i,int line_num) {
+
+int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	int j;
-	/* extracting ofset for first parameter if any */
+	/* extracting offset for first parameter if any */
 
 	end_of_word++;
 
 	j = 0;
 	while (isalnum(*end_of_word) && j <= MAX_LABEL_SIZE) {	
-		operand_ofset[j] = *end_of_word;
+		operand_offset[j] = *end_of_word;
 		end_of_word++;
 		j++;
 	}
@@ -589,23 +589,23 @@ int extract_operand_ofset(char * operand_ofset,int i,int line_num) {
 		return 0;
 	}
 
-	operand_ofset[j] = '\0';
+	operand_offset[j] = '\0';
 	end_of_word++;
 	return 1;
 }
 
-int update_operand(char *operand,char *operand_ofset,int work_on_source) {
+int update_operand(char *operand,char *operand_offset,int work_on_source) {
 	/* Index addressing. */
-	if (*operand_ofset != '\0') {
+	if (*operand_offset != '\0') {
 		if (work_on_source == 1) {
 			line_data->line_word.inst.source_addressing = 2;
-			if (*operand_ofset == 'r' && operand_ofset[1] >= '0' && operand_ofset[1] <= '7' && strlen(operand_ofset) == 2)
-				line_data->line_word.inst.source_register = operand_ofset[1] - '0';
+			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
+				line_data->line_word.inst.source_register = operand_offset[1] - '0';
 		}
 		else {
 			line_data->line_word.inst.destination_addressing = 2;
-			if (*operand_ofset == 'r' && operand_ofset[1] >= '0' && operand_ofset[1] <= '7' && strlen(operand_ofset) == 2)
-				line_data->line_word.inst.destination_register = operand_ofset[1] - '0';
+			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
+				line_data->line_word.inst.destination_register = operand_offset[1] - '0';
 		}
 		return 0;
 	}
@@ -636,7 +636,7 @@ int update_operand(char *operand,char *operand_ofset,int work_on_source) {
 	return 0;
 }
 
-int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int i,int line_num) {
+int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int i,int line_num) {
 	int addressing;
 
 	if (work_on_source)
@@ -688,26 +688,26 @@ int add_operand_lines (char *operand,char *operand_ofset,int work_on_source,int 
 			line_data->label_to_extract = (char *)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 
-			if (isdigit(*operand_ofset)) {
+			if (isdigit(*operand_offset)) {
 				line_data = New(line_parse);
 				line_data->decimal_address = IC;
 				line_data->label_to_extract = NULL;
 				lines_data_list = list_append(lines_data_list, line_data);
 				IC++;
 
-				if((line_data->line_word.data = extract_number(operand_ofset, line_num)) == 999999) {
+				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == 999999) {
 					error_set("Error", "Illegal addressing.", line_num);
 					return 0;
 				}
 			}
-			else if (!(*operand_ofset == 'r' && strlen(operand_ofset) == 2 &&	*(operand_ofset + 1) >= '0' && *(operand_ofset + 1) <= '7')) {
+			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 &&	*(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
 				line_data = New(line_parse);
 				line_data->decimal_address = IC;
 				line_data->line_word.data = 0;
 				lines_data_list = list_append(lines_data_list, line_data);
 				IC++;
-				line_data->label_to_extract=(char *)malloc(strlen(operand_ofset)+1);
-				strcpy(line_data->label_to_extract,operand_ofset);
+				line_data->label_to_extract=(char *)malloc(strlen(operand_offset)+1);
+				strcpy(line_data->label_to_extract,operand_offset);
 			}
 
 			break;

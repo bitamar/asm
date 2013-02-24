@@ -14,7 +14,7 @@
 #define MAX_DATA_NUMBER 524287 
 /* =2^20-2^19 */
 #define MIN_DATA_NUMBER -524288 
-#define LINE_OFSET 100
+#define LINE_OFFSET 100
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
