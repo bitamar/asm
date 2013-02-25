@@ -464,7 +464,6 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 
 	/*printf("\nthis is a string line, the string is %s\n", begin_of_word);*/
 	while (begin_of_word + 1 < end_of_word) {
-
 		DC++;
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
@@ -472,7 +471,6 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 		lines_data_list = list_append(lines_data_list, line_data);
 
 		begin_of_word++;
-
 	}
 
 	DC++;			
@@ -520,6 +518,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 	 */
 	label = New(Label);
 	label->line = line_num;
+	label->label_type = LABEL_TYPE_EXTERN;
 	label->label = (char*)malloc(MAX_LABEL_SIZE + 1);
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
