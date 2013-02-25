@@ -54,12 +54,13 @@ void parser_parse() {
 	Label* label;
 	
 	char *begin_of_word, command_type[7];
-	int line_num = 0, i, j, addressing; /* addressing is used for destination addresing only */
+	/* "addressing" is used for destination addressing only. */
+	int line_num = 0, i, j, addressing;
 
 	while ((line = reader_get_line())) {
 		line_num++;
 
-		/* this is for remark line */
+		/* Commented-out line. */
 		if (*line == ';')
 			continue;
 
@@ -69,7 +70,7 @@ void parser_parse() {
 
 		find_next_non_blank_char(begin_of_word);
 
-		/* this is for empty line */
+		/* Empty line. */
 		if (*begin_of_word == '\0') {
 			free (label);
 			continue;
@@ -89,7 +90,7 @@ void parser_parse() {
 			continue;
 		}
 
-		/* find end of command */
+		/* Find end of command. */
 		end_of_word = begin_of_word + 1;
 		while (!char_isblank(*end_of_word) && *end_of_word != '/' && *end_of_word != '\0')
 			end_of_word++;
@@ -98,7 +99,7 @@ void parser_parse() {
 		    || (!strncmp(begin_of_word, ".string", 7) && (end_of_word - begin_of_word) == 7 && *end_of_word != '/'))
 		    && label->label) {
 
-			label->line = DC+1;	
+			label->line = DC + 1;
 			label->is_data = 1;
 
 			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
@@ -362,7 +363,7 @@ void _parser_find_data_item_label(void* data) {
 		return;
 	}
 	/* Find the label's */
-	list_search(parser_symbols)
+	/*list_search(parser_symbols)*/
 	printf("%s\n", line_data->label_to_extract);
 	/*line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data*/
 }
