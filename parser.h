@@ -68,11 +68,17 @@ typedef struct {
 	unsigned int line; 
 	unsigned int is_data :1; /* 1 for data 0 for instruction*/
 } Label;
+
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
  */
 void parser_parse();
+
+/**
+ * Performs "Second phase" symbols translation.
+ */
+void parser_translate_symbols();
 
 /**
  * Create the external symbols file.
@@ -118,5 +124,15 @@ void _parser_duplicated_label(void* data);
  *   File to write to.
  */
 void _parser_print_label(void* data, FILE* stream);
+
+/**
+ *
+ */
+void _parser_print_data_item(void* data, FILE* stream);
+
+/**
+ *
+ */
+void _parser_find_data_item_label(void* data);
 
 #endif /* PARSER_H_ */

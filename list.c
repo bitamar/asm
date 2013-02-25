@@ -65,6 +65,18 @@ void list_print(List list, FILE* stream, void(*_print)(void*, FILE*)) {
 	} while((p = p->next));
 }
 
+void list_foreach(List list, void(*_callback)(void*)) {
+	ListNodePtr p = list;
+
+	if (!list)
+		return;
+
+	/* Iterate the list calling _callback for each node. */
+	do {
+		_callback(p->data);
+	} while((p = p->next));
+}
+
 void list_destruct(List list) {
 	ListNodePtr p = list, tmp;
 	

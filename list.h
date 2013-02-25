@@ -58,9 +58,19 @@ List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(
  * @param stream
  *   File to print to.
  * @param _print
- *   Callback function for printing node's data.
+ *   Call-back function for printing node's data.
  */
 void list_print(List list, FILE* stream, void(*_print)(void*, FILE*));
+
+/**
+ * Iterate a list and perform a call-back function on each node.
+ *
+ * @param list
+ *   The list head.
+ * @param _callback
+ *   Call-back function to perform on the node's data.
+ */
+void list_foreach(List list, void(*_callback)(void*));
 
 /**
  * Free all the nodes and data from a list.

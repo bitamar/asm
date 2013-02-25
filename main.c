@@ -20,6 +20,8 @@ int main(int argc, char* argv[]) {
 
 		parser_output_ext_file();
 
+		parser_translate_symbols();
+
 		reader_close_file();
 	}
 

@@ -268,9 +268,14 @@ void parser_parse() {
 				continue;
 		}
 		
-		printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_offset,operand2,operand2_offset, line);
+		/* printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_offset,operand2,operand2_offset, line); */
 	}
 
+	/* list_print(parser_symbols, stdout, &_parser_print_label); */
+}
+
+void parser_translate_symbols() {
+	list_foreach(lines_data_list, &_parser_find_data_item_label);
 	list_print(parser_symbols, stdout, &_parser_print_label);
 }
 
@@ -338,6 +343,23 @@ void _parser_print_label(void* data, FILE* stream) {
 	fprintf(stream, "%d: %s\n", label->line, label->label);
 }
 
+void _parser_print_data_item(void* data, FILE* stream) {
+	line_parse* line_data = data;
+	fprintf(stream, "decimal address: %d\nLabel to extract: %s\nData: %ld\n\n", line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
+}
+
+void _parser_find_data_item_label(void* data) {
+	line_parse* line_data = data;
+
+	if (!line_data->label_to_extract) {
+		return;
+	}
+	/* Find the label's */
+	list_search(parser_symbols)
+	printf("%s\n", line_data->label_to_extract);
+	/*line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data*/
+}
+
 void extract_data_number(char * begin_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
@@ -346,7 +368,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 	num_of_param = 0;
 	num_of_comma = 0;
-	printf("Data line\n");
+	/* printf("Data line\n"); */
 
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(begin_of_word);
@@ -396,8 +418,8 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		IC++;
 		num_of_param++;
 		
-		if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
-			printf("\n data is %ld\n", data_number);
+		/*if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
+			printf("\n data is %ld\n", data_number);*/
 
 		find_next_non_blank_char(end_of_word);
 
@@ -432,7 +454,7 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 		return 0;
 	}
 
-	printf("\nthis is a string line, the string is %s\n", begin_of_word);
+	/*printf("\nthis is a string line, the string is %s\n", begin_of_word);*/
 	while (begin_of_word + 1 < end_of_word) {
 		line_data = New(line_parse);
 		line_data->decimal_address = IC;
