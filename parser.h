@@ -19,8 +19,10 @@
 
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 
+typedef enum {LABEL_TYPE_COMMAND, LABEL_TYPE_DATA, LABEL_TYPE_EXTERN} LabelType;
+
 /**
- * Assembler instruction set.
+ * Assembler commands set.
  * Addressing code are 0 not in use, 1 in use
  * source operand and destination_operand are 0 if not in use , and 1 if in use
  */
@@ -35,8 +37,8 @@ typedef struct {
 	unsigned int destination_direct_register_addressing :1;
 	unsigned int source_operand :1;
 	unsigned int destination_operand :1;
-	char *instruction;
-} Instruction;
+	char *command;
+} Command;
 
 typedef struct {
 	unsigned int comb :2; /*active only if type=1*/
@@ -47,10 +49,10 @@ typedef struct {
 	unsigned int opcode :4;
 	unsigned int type :1;
 	unsigned int unused :3;
-} instruction_word; 
+} command_word;
 
 typedef union { 
-	instruction_word inst;
+	command_word inst;
 	unsigned long data;
 } word;
 
@@ -66,7 +68,7 @@ typedef struct {
 typedef struct {
 	char* label;
 	unsigned int line; 
-	unsigned int is_data :1; /* 1 for data 0 for instruction*/
+	LabelType label_type;
 } Label;
 
 /**
