@@ -85,7 +85,12 @@ void parser_translate_symbols();
 /**
  * Create the external symbols file.
  */
-void parser_output_ext_file();
+void parser_create_ext_file();
+
+/**
+ * Create the entry symbols file.
+ */
+void parser_create_ent_file();
 
 /**
  * Check whether a line starts with a label.
@@ -136,5 +141,10 @@ void _parser_print_data_item(void* data, FILE* stream);
  *
  */
 void _parser_find_data_item_label(void* data);
+
+/**
+ *
+ */
+void _parser_find_label_address(void* data);
 
 #endif /* PARSER_H_ */

@@ -247,7 +247,7 @@ void parser_parse() {
 			continue;
 		}
 
-		/* Two operand required */
+		/* Two operands required. */
 		if (commands[i].source_operand && commands[i].destination_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
 			error_set("Error", "Two operands required.", line_num);
 			continue;
@@ -256,7 +256,6 @@ void parser_parse() {
 		/* Handling addressing. */
 		/* Two operands exist. */
 		if (*operand2 != '\0') {
-
 			update_operand(operand1, operand1_offset, 1);
 			update_operand(operand2, operand2_offset, 0);
 			addressing=line_data->line_word.inst.destination_addressing;
@@ -282,8 +281,7 @@ void parser_parse() {
 }
 
 void parser_translate_symbols() {
-	list_foreach(lines_data_list, &_parser_find_data_item_label);
-	list_print(parser_symbols, stdout, &_parser_print_label);
+
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -291,7 +289,7 @@ char* parser_get_label(const char* line, int line_num) {
 	char* label;
 	const char* c = line;
 
-	label = (char*) malloc(MAX_LABEL_SIZE + 1);
+	label = (char*)malloc(MAX_LABEL_SIZE + 1);
 	if (!label)
 		error_fatal(ErrorMemoryAlloc);
 
@@ -322,7 +320,7 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
-void parser_output_ext_file() {
+void parser_create_ext_file() {
 	char* file_name = reader_get_file_name("ext");
 	FILE* ext_file = fopen(file_name, "w");
 	if (!ext_file) {
@@ -332,6 +330,23 @@ void parser_output_ext_file() {
 	}
 	free(file_name);
 /*	list_print(parser_extern_symbols, ext_file, &_parser_print_label); */
+}
+
+void parser_create_ent_file() {
+	list_foreach(parser_entry_symbols, &_parser_find_label_address);
+	/*list_print(parser_entry_symbols, stdout, &_parser_print_label);*/
+	/*list_print(parser_symbols, stdout, &_parser_print_label);*/
+}
+
+void _parser_find_label_address(void* data) {
+	Label* label = data;
+	Label* label_found;
+	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
+	if (!label_found)
+		error_set("Error", "Entry label declared but not defined.", label->line);
+	else
+		/* TODO: Write to entry file. */
+		printf("Entry: %s: %d\n", label_found->label, label_found->line);
 }
 
 int _parser_compare_labels(void* a, void* b) {
@@ -517,17 +532,18 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 	/* Insert the label to the external labels list or to the entry labels list.
 	 */
 	label = New(Label);
-	label->line = line_num;
-	label->label_type = LABEL_TYPE_EXTERN;
+
 	label->label = (char*)malloc(MAX_LABEL_SIZE + 1);
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(label->label, begin_of_word);
+	label->line = line_num;
 	switch (line_type) {
 	case LINE_TYPE_ENTRY:
 		parser_entry_symbols = list_add_ordered(parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 	case LINE_TYPE_EXTERN:
+		label->label_type = LABEL_TYPE_EXTERN;
 		parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 	}

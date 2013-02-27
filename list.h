@@ -81,6 +81,12 @@ void list_foreach(List list, void(*_callback)(void*));
 void list_destruct(List list);
 
 /**
+ * Find identical item to the given item.
+ * @param
+ */
+void* list_find_item(List list, void* item, int(*_compare)(void*, void*));
+
+/**
  * Create a new node.
  * 
  * @param data

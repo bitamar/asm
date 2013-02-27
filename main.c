@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
 		parser_parse();
 
-		parser_output_ext_file();
+		parser_create_ent_file();
 
 		parser_translate_symbols();
 

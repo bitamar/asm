@@ -93,6 +93,21 @@ void list_destruct(List list) {
 	} while((p = tmp));
 }
 
+
+void* list_find_item(List list, void* data, int(*_compare)(void*, void*)) {
+	ListNodePtr p = list;
+
+	while(p) {
+		if (!_compare(data, p->data)) {
+			return p->data;
+		}
+
+		p = p->next;
+	}
+
+	return NULL;
+}
+
 ListNodePtr _list_create_node(void* data) {
 	ListNodePtr node;
 	
