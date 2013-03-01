@@ -105,7 +105,6 @@ void parser_parse() {
 
 			label->line = DC + 1;
 			label->label_type = LABEL_TYPE_DATA;
-
 			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}			
 
@@ -261,7 +260,7 @@ void parser_parse() {
 		if (*operand2 != '\0') {
 			update_operand(operand1, operand1_offset, 1);
 			update_operand(operand2, operand2_offset, 0);
-			addressing=line_data->line_word.inst.destination_addressing;
+			addressing = line_data->line_word.inst.destination_addressing;
 
 			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.source_addressing))
 				continue;
@@ -273,7 +272,7 @@ void parser_parse() {
 		/* when one operand exists*/
 		if (*operand1 != '\0' && *operand2 == '\0') {
 			update_operand(operand1, operand1_offset, 0);
-			if (!add_operand_lines (operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.destination_addressing))
+			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.destination_addressing))
 				continue;
 		}
 		/* printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_offset,operand2,operand2_offset, line); */
@@ -296,6 +295,7 @@ void _parser_translate_command(void* data) {
 	if (!line_data->label_to_extract) {
 		return;
 	}
+
 	dummy_label = New(Label);
 	dummy_label->label = line_data->label_to_extract;
 	label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
@@ -313,7 +313,7 @@ void _parser_translate_command(void* data) {
 		printf("Label: %s, Line: %d \n", label_found->label, label_found->line);
 		break;
 	case LABEL_TYPE_EXTERN:
-		fprintf(ext_file, "%s\t%ld\n", label_found->label, utils_convert_base4(label_found->line + LINE_OFFSET));
+		fprintf(ext_file, "%s\t%ld\n", label_found->label, utils_convert_base4(line_data->decimal_address + LINE_OFFSET - 1));
 		break;
 	}
 }
@@ -355,7 +355,7 @@ char* parser_get_label(const char* line, int line_num) {
 }
 
 void parser_create_ext_file() {
-/*	list_print(parser_extern_symbols, ext_file, &_parser_print_label); */
+
 }
 
 void parser_create_ent_file() {
@@ -562,13 +562,15 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(label->label, begin_of_word);
-	label->line = line_num;
+
 	switch (line_type) {
 	case LINE_TYPE_ENTRY:
+		label->line = line_num;
 		parser_entry_symbols = list_add_ordered(parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 	case LINE_TYPE_EXTERN:
 		label->label_type = LABEL_TYPE_EXTERN;
+		label->line = 0;
 		parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 	}
