@@ -38,8 +38,8 @@ enum {ENT_FILE, EXT_FILE, OB_FILE};
 
 /**
  * Assembler commands set.
- * Addressing code are 0 not in use, 1 in use
- * src operand and dest_operand are 0 if not in use , and 1 if in use
+ * Addressing code are 0 not in use, 1 in use.
+ * src_operand and dest_operand are 0 if not in use , and 1 if in use.
  */
 typedef struct {
 	unsigned int src_imidiate_address :1;
@@ -56,7 +56,8 @@ typedef struct {
 } Command;
 
 typedef struct {
-	unsigned int comb :2; /*active only if type=1*/
+	/* Comb is relevant only when type is 1. */
+	unsigned int comb :2;
 	unsigned int dest_reg :3;
 	unsigned int dest_address :2;
 	unsigned int src_reg :3;
@@ -64,17 +65,17 @@ typedef struct {
 	unsigned int opcode :4;
 	unsigned int type :1;
 	unsigned int unused :3;
-} command_word;
+} CommandWord;
 
 typedef union { 
-	command_word inst;
+	CommandWord inst;
 	unsigned long data;
-} word;
+} Word;
 
 typedef struct {
 	int decimal_address;
 	char *label_to_extract;
-	word line_word;
+	Word line_word;
 } LineData;
 
 /**

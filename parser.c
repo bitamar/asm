@@ -283,6 +283,7 @@ void parser_translate_commands() {
 	OpenFile(output_files[OB_FILE], "ob");
 
 	list_foreach(commands_list, &_parser_translate_command);
+	list_foreach(data_list, &_parser_translate_command);
 
 	fclose(output_files[EXT_FILE]);
 	fclose(output_files[OB_FILE]);
@@ -292,38 +293,39 @@ void _parser_translate_command(void* data) {
 	LineData* line_data = data;
 	Label* label_found;
 	Label* dummy_label;
-	static unsigned int line_number = 0;
 
-	if (!line_data->label_to_extract) {
-		return;
+	if (line_data->label_to_extract) {
+		dummy_label = New(Label);
+		dummy_label->label = line_data->label_to_extract;
+		label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
+		free(dummy_label);
+
+		if (!label_found)
+			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
+		else
+			line_data->line_word.data = label_found->line;
 	}
 
-	dummy_label = New(Label);
-	dummy_label->label = line_data->label_to_extract;
-	label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
-	free(dummy_label);
 
-	if (!label_found) {
-		fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
+	printf("%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+
+	printf("%010ld\t", utils_to_base4(line_data->line_word.data));
+
+	if (label_found) {
+		switch (label_found->label_type){
+		case LABEL_TYPE_COMMAND:
+			printf("Command\n");
+			break;
+		case LABEL_TYPE_DATA:
+			/*printf("%ld: ", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + IC));*/
+			/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
+			break;
+		case LABEL_TYPE_EXTERN:
+			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+			break;
+		}
 	}
-
-	printf("%ld\t", utils_to_base4(line_number + LINE_OFFSET));
-	printf("comb: %d\n", line_data->line_word.inst.comb);
-	switch (label_found->label_type){
-	case LABEL_TYPE_COMMAND:
-		printf("Command\n");
-		break;
-	case LABEL_TYPE_DATA:
-
-		/*printf("%ld: ", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + IC));*/
-		/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
-		break;
-	case LABEL_TYPE_EXTERN:
-		fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
-		break;
-	}
-
-	line_number++;
+	printf("\n");
 }
 
 char* parser_get_label(const char* line, int line_num) {
