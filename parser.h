@@ -33,6 +33,9 @@ typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 
 typedef enum {LABEL_TYPE_COMMAND, LABEL_TYPE_DATA, LABEL_TYPE_EXTERN} LabelType;
 
+/* Output files. */
+enum {ENT_FILE, EXT_FILE, OB_FILE};
+
 /**
  * Assembler commands set.
  * Addressing code are 0 not in use, 1 in use
@@ -93,11 +96,6 @@ void parser_parse();
  * Performs "Second phase" commands translation.
  */
 void parser_translate_commands();
-
-/**
- * Create the external symbols file.
- */
-void parser_create_ext_file();
 
 /**
  * Create the entry symbols file.

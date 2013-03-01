@@ -1,8 +1,8 @@
-long utils_convert_base4(long decimal) {
+long utils_to_base4(long decimal) {
     int digit;
     long scale, result = 0L;
 
-    scale=1;
+    scale = 1;
 
     while(decimal > 0) {
 		digit = decimal % 4;

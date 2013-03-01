@@ -32,3 +32,4 @@ dist/*
 *.mk
 
 Debug/asm
+sample*

@@ -20,7 +20,7 @@ LineData* line_data;
 
 int IC = 0, DC = 0; /* command and Data counters */
 
-FILE* ext_file;
+FILE* output_files[3];
 
 const Command commands[] = {
 	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
@@ -281,10 +281,10 @@ void parser_parse() {
 }
 
 void parser_translate_commands() {
-	OpenFile(ext_file, "ext");
+	OpenFile(output_files[EXT_FILE], "ext");
 	list_foreach(commands_list, &_parser_translate_command);
 
-	fclose(ext_file);
+	fclose(output_files[EXT_FILE]);
 }
 
 void _parser_translate_command(void* data) {
@@ -306,14 +306,14 @@ void _parser_translate_command(void* data) {
 	free(dummy_label);
 	switch (label_found->label_type){
 	case LABEL_TYPE_COMMAND:
-		printf("Command: ");
+		/*printf("Command: ");*/
 		break;
 	case LABEL_TYPE_DATA:
-		printf("Data: ");
-		printf("Label: %s, Line: %d \n", label_found->label, label_found->line);
+		/*printf("Data: ");
+		printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
 		break;
 	case LABEL_TYPE_EXTERN:
-		fprintf(ext_file, "%s\t%ld\n", label_found->label, utils_convert_base4(line_data->decimal_address + LINE_OFFSET - 1));
+		fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
 		break;
 	}
 }
@@ -354,25 +354,39 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
-void parser_create_ext_file() {
+/* TEMP function. */
+void _parser_print_data(void* data, FILE* stream) {
+	LineData* line_data = data;
 
+	printf("address: %d, label: %s\n", line_data->decimal_address, line_data->label_to_extract);
 }
 
 void parser_create_ent_file() {
+	OpenFile(output_files[ENT_FILE], "ent");
 	list_foreach(parser_entry_symbols, &_parser_find_label_address);
-	/*list_print(parser_entry_symbols, stdout, &_parser_print_label);*/
-	/*list_print(parser_symbols, stdout, &_parser_print_label);*/
+	/*list_print(parser_entry_symbols, stdout, &_parser_print_label);
+	printf("\n\n\n\b");
+	list_print(parser_symbols, stdout, &_parser_print_label);
+	printf("\n\n\n\b");
+	list_print(commands_list, stdout, &_parser_print_data);*/
+
+	fclose(output_files[ENT_FILE]);
 }
 
 void _parser_find_label_address(void* data) {
+	unsigned long address;
 	Label* label = data;
 	Label* label_found;
 	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
-	if (!label_found)
+	if (!label_found) {
 		error_set("Error", "Entry label declared but not defined.", label->line);
-	/*else
-		 TODO: Write to entry file.
-		printf("Entry: %s: %d\n", label_found->label, label_found->line);*/
+		return;
+	}
+	address = label_found->line + LINE_OFFSET - 1;
+	if (label_found->label_type == LABEL_TYPE_DATA)
+		address += IC;
+
+	fprintf(output_files[ENT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(address));
 }
 
 int _parser_compare_labels(void* a, void* b) {
