@@ -31,6 +31,7 @@ void reader_open_file(const char* file_name) {
 
 	if (!reader_file) {
 		fprintf(stderr, ErrorCantRead, full_file_name);
+		fprintf(stderr, "\n");
 		free(full_file_name);
 		exit(EXIT_FAILURE);
 	}

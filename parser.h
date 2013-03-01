@@ -60,7 +60,7 @@ typedef struct {
 	int decimal_address;
 	char *label_to_extract;
 	word line_word;
-} line_parse;
+} LineData;
 
 /**
  * The data stored on a labels-list's node.
@@ -78,9 +78,9 @@ typedef struct {
 void parser_parse();
 
 /**
- * Performs "Second phase" symbols translation.
+ * Performs "Second phase" commands translation.
  */
-void parser_translate_symbols();
+void parser_translate_commands();
 
 /**
  * Create the external symbols file.
@@ -146,5 +146,10 @@ void _parser_find_data_item_label(void* data);
  *
  */
 void _parser_find_label_address(void* data);
+
+/**
+ *
+ */
+void _parser_translate_command(void* data);
 
 #endif /* PARSER_H_ */

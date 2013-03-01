@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
 		parser_create_ent_file();
 
-		parser_translate_symbols();
+		parser_translate_commands();
 
 		reader_close_file();
 	}
