@@ -39,28 +39,28 @@ enum {ENT_FILE, EXT_FILE, OB_FILE};
 /**
  * Assembler commands set.
  * Addressing code are 0 not in use, 1 in use
- * source operand and destination_operand are 0 if not in use , and 1 if in use
+ * src operand and dest_operand are 0 if not in use , and 1 if in use
  */
 typedef struct {
-	unsigned int source_imidiat_addressing :1;
-	unsigned int source_direct_addressing :1;
-	unsigned int source_index_addressing :1;
-	unsigned int source_direct_register_addressing :1;
-	unsigned int destination_imidiat_addressing :1;
-	unsigned int destination_direct_addressing :1;
-	unsigned int destination_index_addressing :1;
-	unsigned int destination_direct_register_addressing :1;
-	unsigned int source_operand :1;
-	unsigned int destination_operand :1;
+	unsigned int src_imidiate_address :1;
+	unsigned int src_direct_address :1;
+	unsigned int src_index_address :1;
+	unsigned int src_direct_reg_address :1;
+	unsigned int dest_imidiate_address :1;
+	unsigned int dest_direct_address :1;
+	unsigned int dest_index_address :1;
+	unsigned int dest_direct_reg_address :1;
+	unsigned int src_operand :1;
+	unsigned int dest_operand :1;
 	char *command;
 } Command;
 
 typedef struct {
 	unsigned int comb :2; /*active only if type=1*/
-	unsigned int destination_register :3;
-	unsigned int destination_addressing :2;
-	unsigned int source_register :3;
-	unsigned int source_addressing :2;
+	unsigned int dest_reg :3;
+	unsigned int dest_address :2;
+	unsigned int src_reg :3;
+	unsigned int src_address :2;
 	unsigned int opcode :4;
 	unsigned int type :1;
 	unsigned int unused :3;

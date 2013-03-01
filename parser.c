@@ -58,8 +58,8 @@ void parser_parse() {
 	Label* label;
 	
 	char *begin_of_word, command_type[7];
-	/* "addressing" is used for destination addressing only. */
-	int line_num = 0, i, j, addressing;
+	/* "address" is used for dest address only. */
+	int line_num = 0, i, j, address;
 
 	while ((line = reader_get_line())) {
 		line_num++;
@@ -238,19 +238,19 @@ void parser_parse() {
 		}
 
 		/* No operand required. */
-		if (!commands[i].source_operand && !commands[i].destination_operand && *operand1 != '\0') {
+		if (!commands[i].src_operand && !commands[i].dest_operand && *operand1 != '\0') {
 			error_set("Error", "No operands required", line_num);
 			continue;
 		}
 
 		/* One operand required. */
-		if (!commands[i].source_operand && commands[i].destination_operand && (*operand1 == '\0' || *operand2 != '\0')) {
+		if (!commands[i].src_operand && commands[i].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
 			error_set("Error", "Exactly one operand required.", line_num);
 			continue;
 		}
 
 		/* Two operands required. */
-		if (commands[i].source_operand && commands[i].destination_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
+		if (commands[i].src_operand && commands[i].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
 			error_set("Error", "Two operands required.", line_num);
 			continue;
 		}
@@ -260,37 +260,39 @@ void parser_parse() {
 		if (*operand2 != '\0') {
 			update_operand(operand1, operand1_offset, 1);
 			update_operand(operand2, operand2_offset, 0);
-			addressing = line_data->line_word.inst.destination_addressing;
+			address = line_data->line_word.inst.dest_address;
 
-			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.source_addressing))
+			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.src_address))
 				continue;
 
-			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, addressing))
+			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, address))
 				continue;
 		}
 
 		/* when one operand exists*/
 		if (*operand1 != '\0' && *operand2 == '\0') {
 			update_operand(operand1, operand1_offset, 0);
-			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.destination_addressing))
+			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
 				continue;
 		}
-		/* printf("\n%d label is %s first parameter is %s,%s ,second %s,%s line is %s\n", line_num, label->label, operand1,operand1_offset,operand2,operand2_offset, line); */
 	}
-	/* list_print(parser_symbols, stdout, &_parser_print_label); */
 }
 
 void parser_translate_commands() {
 	OpenFile(output_files[EXT_FILE], "ext");
+	OpenFile(output_files[OB_FILE], "ob");
+
 	list_foreach(commands_list, &_parser_translate_command);
 
 	fclose(output_files[EXT_FILE]);
+	fclose(output_files[OB_FILE]);
 }
 
 void _parser_translate_command(void* data) {
 	LineData* line_data = data;
 	Label* label_found;
 	Label* dummy_label;
+	static unsigned int line_number = 0;
 
 	if (!line_data->label_to_extract) {
 		return;
@@ -299,23 +301,29 @@ void _parser_translate_command(void* data) {
 	dummy_label = New(Label);
 	dummy_label->label = line_data->label_to_extract;
 	label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
+	free(dummy_label);
+
 	if (!label_found) {
 		fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
 	}
 
-	free(dummy_label);
+	printf("%ld\t", utils_to_base4(line_number + LINE_OFFSET));
+	printf("comb: %d\n", line_data->line_word.inst.comb);
 	switch (label_found->label_type){
 	case LABEL_TYPE_COMMAND:
-		/*printf("Command: ");*/
+		printf("Command\n");
 		break;
 	case LABEL_TYPE_DATA:
-		/*printf("Data: ");
-		printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
+
+		/*printf("%ld: ", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + IC));*/
+		/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
 		break;
 	case LABEL_TYPE_EXTERN:
 		fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
 		break;
 	}
+
+	line_number++;
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -342,9 +350,9 @@ char* parser_get_label(const char* line, int line_num) {
 		strncpy(label, line, len);
 		label[len] = '\0';
 
-		/* check if label name is a register name*/
+		/* check if label name is a reg name*/
 		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
-			error_set("Error", "Illegal label name, same as register.", line_num);
+			error_set("Error", "Illegal label name, same as reg.", line_num);
 			return NULL;
 		}
 
@@ -364,12 +372,6 @@ void _parser_print_data(void* data, FILE* stream) {
 void parser_create_ent_file() {
 	OpenFile(output_files[ENT_FILE], "ent");
 	list_foreach(parser_entry_symbols, &_parser_find_label_address);
-	/*list_print(parser_entry_symbols, stdout, &_parser_print_label);
-	printf("\n\n\n\b");
-	list_print(parser_symbols, stdout, &_parser_print_label);
-	printf("\n\n\n\b");
-	list_print(commands_list, stdout, &_parser_print_data);*/
-
 	fclose(output_files[ENT_FILE]);
 }
 
@@ -555,7 +557,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 
 	/* check if label name is a register name*/
 	if ((end_of_word - begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word, "PC", 2) || !strncmp(begin_of_word, "SP", 2))) || (end_of_word - begin_of_word == 2 && !strncmp(begin_of_word, "PSW", 3))) {
-		error_set("Error", "Illegal label name, same as register.", line_num);
+		error_set("Error", "Illegal label name, same as reg.", line_num);
 		return;
 	}
 
@@ -682,54 +684,54 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	return 1;
 }
 
-int update_operand(char *operand,char *operand_offset,int work_on_source) {
-	/* Index addressing. */
+int update_operand(char *operand,char *operand_offset,int work_on_src) {
+	/* Index address. */
 
 	if (*operand_offset != '\0') {
-		if (work_on_source) {
-			line_data->line_word.inst.source_addressing = 2;
+		if (work_on_src) {
+			line_data->line_word.inst.src_address = 2;
 			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
-				line_data->line_word.inst.source_register = operand_offset[1] - '0';
+				line_data->line_word.inst.src_reg = operand_offset[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.destination_addressing = 2;
+			line_data->line_word.inst.dest_address = 2;
 			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
-				line_data->line_word.inst.destination_register = operand_offset[1] - '0';
+				line_data->line_word.inst.dest_reg = operand_offset[1] - '0';
 		}
 		return 0;
 	}
 
-	/* Register addressing. */
+	/* Register address. */
 	if (*operand == 'r' && operand[1] >= '0' && operand[1] <= '7' && strlen(operand) == 2) {
-		if (work_on_source) {
-			line_data->line_word.inst.source_addressing = 3;
-			line_data->line_word.inst.source_register = operand[1] - '0';
+		if (work_on_src) {
+			line_data->line_word.inst.src_address = 3;
+			line_data->line_word.inst.src_reg = operand[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.destination_addressing = 3;
-			line_data->line_word.inst.destination_register = operand[1] - '0';
+			line_data->line_word.inst.dest_address = 3;
+			line_data->line_word.inst.dest_reg = operand[1] - '0';
 		}
 		return 0;
 	}
 
-	/* Direct addressing. */
+	/* Direct address. */
 	if (*operand != '#') {
-		if (work_on_source)
-			line_data->line_word.inst.source_addressing = 1;
+		if (work_on_src)
+			line_data->line_word.inst.src_address = 1;
 		else 
-			line_data->line_word.inst.destination_addressing = 1;
+			line_data->line_word.inst.dest_address = 1;
 		return 0;
 	}
 
-	/* For immediate addressing it is already 0. */
+	/* For immediate address it is already 0. */
 	return 0;
 }
 
-int add_operand_lines (char *operand, char *operand_offset, int work_on_source, int i, int line_num, int addr) {
+int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int i, int line_num, int addr) {
 	switch (addr) {
 		case 0: 
-			if ((!commands[i].source_imidiat_addressing && work_on_source) || (!commands[i].destination_imidiat_addressing && !work_on_source)) {
-				error_set("Error", "Illegal addressing.", line_num);
+			if ((!commands[i].src_imidiate_address && work_on_src) || (!commands[i].dest_imidiate_address && !work_on_src)) {
+				error_set("Error", "Illegal address.", line_num);
 				return 0;
 			}
 
@@ -744,8 +746,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_source, 
 			break;
 
 		case 1:
-			if ((!commands[i].source_direct_addressing && work_on_source) || (!commands[i].destination_direct_addressing && !work_on_source)) {
-				error_set("Error", "Illegal addressing.", line_num);
+			if ((!commands[i].src_direct_address && work_on_src) || (!commands[i].dest_direct_address && !work_on_src)) {
+				error_set("Error", "Illegal address.", line_num);
 				return 0;
 			}
 
@@ -760,8 +762,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_source, 
 			break;
 
 		case 2:
-			if ((!commands[i].source_index_addressing && work_on_source) || (!commands[i].destination_index_addressing && !work_on_source)) {
-				error_set("Error", "Illegal addressing.", line_num);
+			if ((!commands[i].src_index_address && work_on_src) || (!commands[i].dest_index_address && !work_on_src)) {
+				error_set("Error", "Illegal address.", line_num);
 				return 0;
 			}
 
@@ -783,7 +785,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_source, 
 				commands_list = list_append(commands_list, line_data);
 			
 				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == 999999) {
-					error_set("Error", "Illegal addressing.", line_num);
+					error_set("Error", "Illegal address.", line_num);
 					return 0;
 				}
 			}
@@ -800,8 +802,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_source, 
 			break;
 
 		case 3:
-			if  ((!commands[i].source_direct_register_addressing && work_on_source) || (!commands[i].destination_direct_register_addressing && !work_on_source)) {
-				error_set("Error", "Illegal addressing.", line_num);
+			if  ((!commands[i].src_direct_reg_address && work_on_src) || (!commands[i].dest_direct_reg_address && !work_on_src)) {
+				error_set("Error", "Illegal address.", line_num);
 				return 0;
 			}
 			break;
