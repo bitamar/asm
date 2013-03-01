@@ -302,14 +302,16 @@ void _parser_translate_command(void* data) {
 
 		if (!label_found)
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
-		else
-			line_data->line_word.data = label_found->line;
+		else {
+			line_data->line_word.data = label_found->line + LINE_OFFSET - 1;
+			if (label_found->label_type == LABEL_TYPE_DATA)
+				line_data->line_word.data += IC;
+		}
 	}
 
 
-	printf("%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
-
-	printf("%010ld\t", utils_to_base4(line_data->line_word.data));
+	fprintf(output_files[OB_FILE], "%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+	fprintf(output_files[OB_FILE], "%010ld\t", utils_to_base4(line_data->line_word.data));
 
 	if (label_found) {
 		switch (label_found->label_type){
@@ -325,7 +327,7 @@ void _parser_translate_command(void* data) {
 			break;
 		}
 	}
-	printf("\n");
+	fprintf(output_files[OB_FILE], "\n");
 }
 
 char* parser_get_label(const char* line, int line_num) {
