@@ -1,12 +1,22 @@
-MAIN:			mov/0				LENGTH, r1
-				lea/1/1/1			STR{LENGTH}, r4
-LOOP:			jmp/1/0/0			END
-				prn/1/1/0			STR{r3}
-				sub/0				#1, r1
-				inc/0				r0
-				mov/0				r3, STR{7}
-				bne/0				LOOP
-END: 			stop/0
-STR:			.string "abcdef"
-LENGTH:			.data		6
-K:				.data		2
+			.entry		STRADD
+			.entry		MAIN
+			.extern		REVERSE
+			.extern		PRTSTR
+			.extern 	COUNT
+STRADD:		.data		0
+STR:		.string 	"abcdef"
+LASTCHAR:	.data		0
+LEN:		.data		0
+K:			.data		0
+; Count length of string, print the original string, print reversed string.
+MAIN:		lea/0		STR{LEN}, STRADD
+			jsr/0		COUNT
+			jsr/0		PRTSTR
+			mov/1/1/0	STRADD{5}, LASTCHAR{R3}
+			mov/1/1/1	STR{7}, R7
+			add/0		COUNT{K}, R3
+			dec/1/1/1	LASTCHAR{K}
+			inc/0		K
+			jsr/0		REVERSE
+			jsr/0		PRTSTR
+			stop/0
