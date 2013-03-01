@@ -3,6 +3,7 @@
 #include "list.h"
 #include "parser.h"
 #include "reader.h"
+#include "utils.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,8 @@ List commands_list;
 LineData* line_data;
 
 int IC = 0, DC = 0; /* command and Data counters */
+
+FILE* ext_file;
 
 const Command commands[] = {
 	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
@@ -279,7 +282,10 @@ void parser_parse() {
 }
 
 void parser_translate_commands() {
+	OpenFile(ext_file, "ext");
 	list_foreach(commands_list, &_parser_translate_command);
+
+	fclose(ext_file);
 }
 
 void _parser_translate_command(void* data) {
@@ -298,8 +304,18 @@ void _parser_translate_command(void* data) {
 	}
 
 	free(dummy_label);
-
-	printf("%s\n", line_data->label_to_extract);
+	switch (label_found->label_type){
+	case LABEL_TYPE_COMMAND:
+		printf("Command: ");
+		break;
+	case LABEL_TYPE_DATA:
+		printf("Data: ");
+		printf("Label: %s, Line: %d \n", label_found->label, label_found->line);
+		break;
+	case LABEL_TYPE_EXTERN:
+		fprintf(ext_file, "%s\t%ld\n", label_found->label, utils_convert_base4(label_found->line + LINE_OFFSET));
+		break;
+	}
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -339,15 +355,6 @@ char* parser_get_label(const char* line, int line_num) {
 }
 
 void parser_create_ext_file() {
-	char* file_name = reader_get_file_name("ext");
-	FILE* ext_file = fopen(file_name, "w");
-	if (!ext_file) {
-		fprintf(stderr, ErrorCantRead, file_name);
-		fprintf(stderr, "\n");
-		free(file_name);
-		exit(EXIT_FAILURE);
-	}
-	free(file_name);
 /*	list_print(parser_extern_symbols, ext_file, &_parser_print_label); */
 }
 
@@ -702,8 +709,7 @@ int update_operand(char *operand,char *operand_offset,int work_on_source) {
 	return 0;
 }
 
-int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int i,int line_num,int addr) {
-
+int add_operand_lines (char *operand, char *operand_offset, int work_on_source, int i, int line_num, int addr) {
 	switch (addr) {
 		case 0: 
 			if ((!commands[i].source_imidiat_addressing && work_on_source) || (!commands[i].destination_imidiat_addressing && !work_on_source)) {
@@ -716,9 +722,8 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 			line_data->decimal_address = IC;
 			line_data->label_to_extract = NULL;
 			commands_list = list_append(commands_list, line_data);
-			
 
-			if((line_data->line_word.data = extract_number(&operand[1], line_num))==999999)
+			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == 999999)
 				return 0;
 			break;
 
@@ -731,10 +736,10 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 			IC++;
 			line_data = New(LineData);
 			line_data->decimal_address = IC;
-			line_data->line_word.data=0;
+			line_data->line_word.data = 0;
 			commands_list = list_append(commands_list, line_data);
 
-			line_data->label_to_extract=(char *)malloc(strlen(operand) + 1);
+			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 			break;
 
@@ -767,7 +772,6 @@ int add_operand_lines (char *operand,char *operand_offset,int work_on_source,int
 				}
 			}
 			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
-
 				IC++;
 				line_data = New(LineData);
 				line_data->decimal_address = IC;

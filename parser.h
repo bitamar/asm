@@ -17,6 +17,18 @@
 #define LINE_OFFSET 100
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
+#define OpenFile(file, extension) {\
+	char* file_name = reader_get_file_name(extension);\
+	file = fopen(file_name, "w");\
+	if (!file) {\
+		fprintf(stderr, ErrorCantRead, file_name);\
+		fprintf(stderr, "\n");\
+		free(file_name);\
+		exit(EXIT_FAILURE);\
+	}\
+	free(file_name);\
+}
+
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 
 typedef enum {LABEL_TYPE_COMMAND, LABEL_TYPE_DATA, LABEL_TYPE_EXTERN} LabelType;
