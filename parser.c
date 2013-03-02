@@ -301,14 +301,13 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			if (label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += IC;
 		}
+		else if (label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
+			fprintf(output_files[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
 	}
 
 	/* Avoid adding the offset when the address is zero. */
 	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
 	fprintf(output_files[OB_FILE], "%d\t%s\t\n", base4(address), base4code(line_data->line_word.data, code));
-
-	if (label_found && label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
-		fprintf(output_files[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
 }
 
 void _parser_translate_data(void* data) {
