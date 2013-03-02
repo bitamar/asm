@@ -277,6 +277,7 @@ void parser_translate_commands() {
 	OpenFile(output_files[EXT_FILE], "ext");
 	OpenFile(output_files[OB_FILE], "ob");
 
+	fprintf(output_files[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(IC), base4(DC));
 	list_foreach(commands_list, &_parser_translate_command);
 	list_foreach(data_list, &_parser_translate_data);
 
@@ -295,6 +296,8 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 		label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
 		free(dummy_label);
 
+		line_data->are = label_found->label_type == LABEL_TYPE_EXTERN ? 'e' : 'r';
+
 		if (!label_found)
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
 		else if (label_found->line) {
@@ -308,7 +311,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 	/* Avoid adding the offset when the address is zero. */
 	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output_files[OB_FILE], "%d\t%s\t\n", base4(address), base4code(line_data->line_word.data, code));
+	fprintf(output_files[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(line_data->line_word.data, code), line_data->are);
 }
 
 void _parser_translate_data(void* data) {
@@ -554,7 +557,7 @@ long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 	
 	if (number[0] != '-' && number[0] != '+' && !isdigit(number[0])) {
 		error_set("Error", "Illegal operand, expect number after.", line_num);
-		return 999999;
+		return -1;
 	}
 	
 	data_number = 0;
@@ -565,14 +568,14 @@ long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 	while (number[k] != '\0') {
 		if (!isdigit(number[k])) {
 			error_set("Error", "Illegal number.", line_num);
-			return 999999;
+			return -1;
 		} 
 		
 		else {
 			data_number = 10 * data_number + number[k] - '0';
 			if ((number[0] == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 				error_set("Error", "Number out of limit.", line_num);
-				return 999999;
+				return -1;
 			}
 		}
 		k++;
@@ -706,7 +709,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data->are='a';
 			commands_list = list_append(commands_list, line_data);
 
-			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == 999999)
+			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == -1)
 				return 0;
 			break;
 
@@ -742,7 +745,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			strcpy(line_data->label_to_extract, operand);			
 			commands_list = list_append(commands_list, line_data);
 		
-			IC++; /* adding ofset address */
+			/* Adding offset address. */
+			IC++;
 			line_data = New(LineData);
 			line_data->decimal_address = IC;			
 			
@@ -750,24 +754,23 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
 
 				line_data->label_to_extract = NULL;
-				line_data->are='a';
-				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == 999999) {
+				line_data->are = 'a';
+				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == -1) {
 					error_set("Error", "Illegal address.", line_num);
 					return 0;
 				}
 			}
 
 			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
-
-				line_data->are='\0';
+				line_data->are = '\0';
 				line_data->line_word.data = 0;
 				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
 				strcpy(line_data->label_to_extract, operand_offset);
 			}
 
-			else { /* this is a register ofset */
-
-				line_data->are='a';
+			else {
+				/* This is a register offset. */
+				line_data->are = 'a';
 				line_data->line_word.data = 0;
 				line_data->label_to_extract = NULL;
 			}
