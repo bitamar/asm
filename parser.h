@@ -10,11 +10,13 @@
 #define New(type) (type *)malloc(sizeof(type))
 
 #define MAX_LABEL_SIZE 30
-/* =2^19-1 */
+/* 2^19 - 1 = 524287 */
 #define MAX_DATA_NUMBER 524287 
-/* =2^20-2^19 */
+/* 2^19 - 2^20 = -524288 */
 #define MIN_DATA_NUMBER -524288 
 #define LINE_OFFSET 100
+/* 2^20 = 1048576, for converting  negatives into two's complement. */
+#define MINUS 1048576
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 
 #define OpenFile(file, extension) {\

@@ -14,6 +14,6 @@
  * @return
  *   The given number converted to base 4.
  */
-long to_base4(long decimal);
+char * to_base4(long decimal,int,char *);
 
 #endif /* UTILS_H_ */

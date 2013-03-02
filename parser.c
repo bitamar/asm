@@ -48,7 +48,7 @@ void parser_parse() {
 
 	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label;
-	
+
 	char *begin_of_word, command_type[7];
 	/* "address" is used for destination address only. */
 	int line_num = 0, i, j, address;
@@ -287,7 +287,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 	Label* label_found = NULL;
 	Label* dummy_label;
 	long address;
-
+	char num_base4_address[5],num_base4[11];
 	if (line_data->label_to_extract) {
 		dummy_label = New(Label);
 		dummy_label->label = line_data->label_to_extract;
@@ -305,7 +305,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 	/* Avoid adding the offset when the address is zero. */
 	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output_files[OB_FILE], "%ld\t%010ld\t\n", to_base4(address), to_base4(line_data->line_word.data));
+	fprintf(output_files[OB_FILE], "%s\t%s\t\n", to_base4(address,4,num_base4_address), to_base4(line_data->line_word.data,10,num_base4));
 	/*printf("%d\t%ld\t%010ld\t\n", line_data->decimal_address, to_base4(address), to_base4(line_data->line_word.data));*/
 
 
@@ -320,7 +320,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			break;
 		case LABEL_TYPE_EXTERN:
 			if (!extra_address_offset)
-				fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+				fprintf(output_files[EXT_FILE], "%s\t%s\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1,4,num_base4_address));
 			break;
 		}
 	}
@@ -388,6 +388,7 @@ void parser_create_ent_file() {
 
 void _parser_find_label_address(void* data) {
 	unsigned long address;
+	char num_base4_address[5];
 	Label* label = data;
 	Label* label_found;
 	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
@@ -399,7 +400,7 @@ void _parser_find_label_address(void* data) {
 	if (label_found->label_type == LABEL_TYPE_DATA)
 		address += IC;
 
-	fprintf(output_files[ENT_FILE], "%s\t%ld\n", label_found->label, to_base4(address));
+	fprintf(output_files[ENT_FILE], "%s\t%s\n", label_found->label, to_base4(address,4,num_base4_address));
 }
 
 int _parser_compare_labels(void* a, void* b) {
@@ -424,14 +425,10 @@ void _parser_print_data_item(void* data, FILE* stream) {
 }
 
 void extract_data_number(char * begin_of_word, int const line_num) {
-	int num_of_param, num_of_comma;
+	int num_of_param = 0, num_of_comma = 0;
 	long data_number;
 	LineData* line_data;
-	char * end_of_word;
-
-	num_of_param = 0;
-	num_of_comma = 0;
-
+	
 	while (*end_of_word != '\0') {
 		NextWord(begin_of_word);
 		end_of_word=begin_of_word;
@@ -471,7 +468,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		}
 
 		if (*begin_of_word == '-')
-			data_number *= -1;
+			data_number = MINUS-data_number;
 
 		DC++;
 		line_data = New(LineData);
@@ -491,7 +488,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 			num_of_comma++;
 		}
 	}
-	if (num_of_comma != num_of_param - 1) {
+	if (num_of_comma != (num_of_param - 1)) {
 		error_set("Warning", "Data line contain spare comma at the end.", line_num);
 	}
 }
@@ -519,7 +516,7 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 	while (begin_of_word + 1 < end_of_word) {
 		DC++;
 		line_data = New(LineData);
-		line_data->decimal_address = IC;
+		line_data->decimal_address = DC;
 		line_data->line_word.data = *(begin_of_word + 1);
 		data_list = list_append(data_list, line_data);
 
@@ -528,7 +525,7 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 
 	DC++;			
 	line_data = New(LineData);
-	line_data->decimal_address = IC;
+	line_data->decimal_address = DC;
 	line_data->line_word.data = 0;
 	data_list = list_append(data_list, line_data);
 
@@ -618,7 +615,8 @@ long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 	}
 
 	if (number[0] == '-')
-		return data_number * (-1);
+
+		return MINUS-data_number;
 
 	return data_number;
 }
@@ -662,6 +660,13 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	end_of_word++;
 
 	j = 0;
+
+	if (*end_of_word=='+' || *end_of_word=='-') {
+		operand_offset[0] = *end_of_word;
+		end_of_word++;
+		j++;
+ 	}
+
 	while (isalnum(*end_of_word) && j <= MAX_LABEL_SIZE) {	
 		operand_offset[j] = *end_of_word;
 		end_of_word++;
@@ -770,7 +775,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 
-			if (isdigit(*operand_offset)) {
+			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
 				IC++;
 				line_data = New(LineData);
 				line_data->decimal_address = IC;
