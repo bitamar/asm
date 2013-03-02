@@ -767,36 +767,32 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			commands_list = list_append(commands_list, line_data);
 		
 			/* Adding offset address. */
-			IC++;
-			line_data = New(LineData);
-			line_data->decimal_address = IC;			
-			
 
 			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
-
+				IC++;
+				line_data = New(LineData);
+				line_data->decimal_address = IC;
 				line_data->label_to_extract = NULL;
 				line_data->are = 'a';
 				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == -1) {
 					error_set("Error", "Illegal address.", line_num);
 					return 0;
 				}
+				commands_list = list_append(commands_list, line_data);
 			}
 
 			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
+				IC++;
+				line_data = New(LineData);
+				line_data->decimal_address = IC;
 				line_data->are = '\0';
 				line_data->line_word.data = 0;
 				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
 				strcpy(line_data->label_to_extract, operand_offset);
+				commands_list = list_append(commands_list, line_data);
 			}
 
-			else {
-				/* This is a register offset. */
-				line_data->are = 'a';
-				line_data->line_word.data = 0;
-				line_data->label_to_extract = NULL;
-			}
 
-			commands_list = list_append(commands_list, line_data);
 			break;
 
 		case 3:
