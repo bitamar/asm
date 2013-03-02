@@ -1,4 +1,4 @@
-long utils_to_base4(long decimal) {
+long to_base4(long decimal) {
     int digit;
     long scale, result = 0L;
 

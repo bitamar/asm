@@ -18,7 +18,8 @@ List commands_list;
 
 LineData* line_data;
 
-int IC = 0, DC = 0; /* command and Data counters */
+/* Command and data counters. */
+int IC = 0, DC = 0;
 
 FILE* output_files[3];
 
@@ -308,8 +309,8 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 		}
 	}
 
-	fprintf(output_files[OB_FILE], "%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
-	fprintf(output_files[OB_FILE], "%010ld\t", utils_to_base4(line_data->line_word.data));
+	fprintf(output_files[OB_FILE], "%ld\t", to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
+	fprintf(output_files[OB_FILE], "%010ld\t", to_base4(line_data->line_word.data));
 
 	if (label_found) {
 		switch (label_found->label_type){
@@ -321,7 +322,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
 			break;
 		case LABEL_TYPE_EXTERN:
-			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
+			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
 			break;
 		}
 	}
@@ -400,7 +401,7 @@ void _parser_find_label_address(void* data) {
 	if (label_found->label_type == LABEL_TYPE_DATA)
 		address += IC;
 
-	fprintf(output_files[ENT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(address));
+	fprintf(output_files[ENT_FILE], "%s\t%ld\n", label_found->label, to_base4(address));
 }
 
 int _parser_compare_labels(void* a, void* b) {
@@ -424,18 +425,6 @@ void _parser_print_data_item(void* data, FILE* stream) {
 	fprintf(stream, "decimal address: %d\nLabel to extract: %s\nData: %ld\n\n", line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
 }
 
-void _parser_find_data_item_label(void* data) {
-	LineData* line_data = data;
-
-	if (!line_data->label_to_extract) {
-		return;
-	}
-	/* Find the label's */
-	/*list_search(parser_symbols)*/
-	printf("%s\n", line_data->label_to_extract);
-	/*line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data*/
-}
-
 void extract_data_number(char * begin_of_word, int const line_num) {
 	int num_of_param, num_of_comma;
 	long data_number;
@@ -444,7 +433,6 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 
 	num_of_param = 0;
 	num_of_comma = 0;
-	/* printf("Data line\n"); */
 
 	while (*end_of_word != '\0') {
 		find_next_non_blank_char(begin_of_word);
@@ -530,7 +518,6 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 		return 0;
 	}
 
-	/*printf("\nthis is a string line, the string is %s\n", begin_of_word);*/
 	while (begin_of_word + 1 < end_of_word) {
 		DC++;
 		line_data = New(LineData);
@@ -547,7 +534,6 @@ int extract_string(char* begin_of_word, int const line_num, char* line) {
 	line_data->line_word.data = 0;
 	data_list = list_append(data_list, line_data);
 
-		
 	return 0;
 }
 
@@ -566,8 +552,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 	while (char_isblank(*end_of_word))
 		end_of_word--;
 
-
-	/* check if label name is a register name*/
+	/* Check if label name is a register name. */
 	if ((end_of_word - begin_of_word == 1 && ((*begin_of_word == 'r' && (*end_of_word - '0') >= 0 && (*end_of_word - '0') <= 7) || !strncmp(begin_of_word, "PC", 2) || !strncmp(begin_of_word, "SP", 2))) || (end_of_word - begin_of_word == 2 && !strncmp(begin_of_word, "PSW", 3))) {
 		error_set("Error", "Illegal label name, same as reg.", line_num);
 		return;
@@ -580,7 +565,6 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 		error_set("Error", "Label expected", line_num);
 		return;
 	}
-
 
 	/* Insert the label to the external labels list or to the entry labels list.
 	 */
@@ -677,7 +661,6 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	int j;
 
 	/* Extracting offset for first parameter if any. */
-
 	end_of_word++;
 
 	j = 0;
