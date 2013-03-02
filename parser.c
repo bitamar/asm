@@ -357,13 +357,6 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
-/* TEMP function. */
-void _parser_print_data(void* data, FILE* stream) {
-	LineData* line_data = data;
-
-	printf("address: %d, label: %s\n", line_data->decimal_address, line_data->label_to_extract);
-}
-
 void parser_create_ent_file() {
 	OpenFile(output_files[ENT_FILE], "ent");
 	list_foreach(parser_entry_symbols, &_parser_find_label_address);
@@ -377,7 +370,7 @@ void _parser_find_label_address(void* data) {
 	Label* label_found;
 	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
 	if (!label_found) {
-		error_set("Error", "Entry label declared but not defined.", label->line);
+		error_set("Error", "Entry label not defined.", label->line);
 		return;
 	}
 	address = label_found->line + LINE_OFFSET - 1;
@@ -396,16 +389,6 @@ int _parser_compare_labels(void* a, void* b) {
 void _parser_duplicated_label(void* data) {
 	Label* label = data;
 	error_set("Error", "Redeclaring label.", label->line);
-}
-
-void _parser_print_label(void* data, FILE* stream) {
-	Label* label = data;
-	fprintf(stream, "%d: %s\n", label->line, label->label);
-}
-
-void _parser_print_data_item(void* data, FILE* stream) {
-	LineData* line_data = data;
-	fprintf(stream, "decimal address: %d\nLabel to extract: %s\nData: %ld\n\n", line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
 }
 
 void extract_data_number(char * begin_of_word, int const line_num) {
@@ -461,9 +444,6 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		data_list = list_append(data_list, line_data);
 
 		num_of_param++;
-		
-		/*if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
-			printf("\n data is %ld\n", data_number);*/
 
 		NextWord(end_of_word);
 

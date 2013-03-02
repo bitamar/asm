@@ -150,21 +150,6 @@ int _parser_compare_labels(void* a, void* b);
 void _parser_duplicated_label(void* data);
 
 /**
- * Callback function for list_print(). Prints one label list item.
- * 
- * @param data
- *   Pointer to label.
- * @param stream
- *   File to write to.
- */
-void _parser_print_label(void* data, FILE* stream);
-
-/**
- *
- */
-void _parser_print_data_item(void* data, FILE* stream);
-
-/**
  *
  */
 void _parser_find_data_item_label(void* data);
