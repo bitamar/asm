@@ -58,7 +58,7 @@ void parser_parse() {
 	Label* label;
 	
 	char *begin_of_word, command_type[7];
-	/* "address" is used for dest address only. */
+	/* "address" is used for destination address only. */
 	int line_num = 0, i, j, address;
 
 	while ((line = reader_get_line())) {
@@ -283,14 +283,13 @@ void parser_translate_commands() {
 	OpenFile(output_files[OB_FILE], "ob");
 
 	list_foreach(commands_list, &_parser_translate_command);
-	list_foreach(data_list, &_parser_translate_command);
+	list_foreach(data_list, &_parser_translate_data);
 
 	fclose(output_files[EXT_FILE]);
 	fclose(output_files[OB_FILE]);
 }
 
-void _parser_translate_command(void* data) {
-	LineData* line_data = data;
+void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
 	Label* label_found;
 	Label* dummy_label;
 
@@ -303,14 +302,13 @@ void _parser_translate_command(void* data) {
 		if (!label_found)
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
 		else {
-			line_data->line_word.data = label_found->line + LINE_OFFSET - 1;
+			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
 			if (label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += IC;
 		}
 	}
 
-
-	fprintf(output_files[OB_FILE], "%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+	fprintf(output_files[OB_FILE], "%ld\t", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
 	fprintf(output_files[OB_FILE], "%010ld\t", utils_to_base4(line_data->line_word.data));
 
 	if (label_found) {
@@ -323,11 +321,21 @@ void _parser_translate_command(void* data) {
 			/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
 			break;
 		case LABEL_TYPE_EXTERN:
-			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1));
+			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
 			break;
 		}
 	}
 	fprintf(output_files[OB_FILE], "\n");
+}
+
+void _parser_translate_data(void* data) {
+	LineData* line_data = data;
+	_parser_translate_line(line_data, IC);
+}
+
+void _parser_translate_command(void* data) {
+	LineData* line_data = data;
+	_parser_translate_line(line_data, 0);
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -588,6 +596,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 		label->line = line_num;
 		parser_entry_symbols = list_add_ordered(parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
+
 	case LINE_TYPE_EXTERN:
 		label->label_type = LABEL_TYPE_EXTERN;
 		label->line = 0;

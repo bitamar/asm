@@ -37,7 +37,7 @@ typedef enum {LABEL_TYPE_COMMAND, LABEL_TYPE_DATA, LABEL_TYPE_EXTERN} LabelType;
 enum {ENT_FILE, EXT_FILE, OB_FILE};
 
 /**
- * Assembler commands set.
+ * Assembler command set.
  * Addressing code are 0 not in use, 1 in use.
  * src_operand and dest_operand are 0 if not in use , and 1 if in use.
  */
@@ -97,6 +97,11 @@ void parser_parse();
  * Performs "Second phase" commands translation.
  */
 void parser_translate_commands();
+
+/**
+ *
+ */
+void _parser_translate_data();
 
 /**
  * Create the entry symbols file.
