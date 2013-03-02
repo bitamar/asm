@@ -22,6 +22,8 @@ int main(int argc, char* argv[]) {
 		parser_create_ent_file();
 		parser_translate_commands();
 
+		printf("File %s assembled successfully.\n", reader_get_file_name(ReaderFileExtension));
+
 		/* Clean data. */
 		parser_clean();
 	}
