@@ -1,13 +1,27 @@
+#include "utils.h"
 
-char * to_base4(long decimal,int num_of_digit,char * str_to_return) {
+char* base4code(long decimal, char* buffer) {
 	int i;
 	
-	for (i=num_of_digit-1;i>=0;i--) {
-		str_to_return[i]='0'+ (decimal & 1) ;
-		decimal=decimal>>1 ;
-		str_to_return[i]=str_to_return[i]+ 2* (decimal & 1) ;
-		decimal=decimal>>1 ;
+	for (i = CODE_SIZE - 1; i >= 0; i--) {
+		buffer[i] = '0' + (decimal & 1) ;
+		decimal = decimal >> 1;
+		buffer[i] = buffer[i] + 2 * (decimal & 1);
+		decimal = decimal >> 1 ;
 	}
-    str_to_return[num_of_digit]='\0';
-    return str_to_return;
+    buffer[CODE_SIZE] = '\0';
+
+    return buffer;
+}
+
+int base4(int decimal) {
+    int digit, scale = 1, result = 0;
+
+    while(decimal > 0) {
+		digit = decimal % 4;
+		result += digit * scale;
+		decimal /= 4;
+		scale *= 10;
+    }
+    return result;
 }

@@ -287,7 +287,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 	Label* label_found = NULL;
 	Label* dummy_label;
 	long address;
-	char num_base4_address[5],num_base4[11];
+	char code[CODE_SIZE + 1];
 	if (line_data->label_to_extract) {
 		dummy_label = New(Label);
 		dummy_label->label = line_data->label_to_extract;
@@ -305,26 +305,10 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 	/* Avoid adding the offset when the address is zero. */
 	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output_files[OB_FILE], "%s\t%s\t\n", to_base4(address,4,num_base4_address), to_base4(line_data->line_word.data,10,num_base4));
-	/*printf("%d\t%ld\t%010ld\t\n", line_data->decimal_address, to_base4(address), to_base4(line_data->line_word.data));*/
+	fprintf(output_files[OB_FILE], "%d\t%s\t\n", base4(address), base4code(line_data->line_word.data, code));
 
-
-	if (label_found) {
-		switch (label_found->label_type){
-		case LABEL_TYPE_COMMAND:
-			printf("Command\n");
-			break;
-		case LABEL_TYPE_DATA:
-			/*printf("%ld: ", utils_to_base4(line_data->decimal_address + LINE_OFFSET - 1 + IC));*/
-			/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
-			break;
-		case LABEL_TYPE_EXTERN:
-			if (!extra_address_offset)
-				fprintf(output_files[EXT_FILE], "%s\t%s\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1,4,num_base4_address));
-			break;
-		}
-	}
-
+	if (label_found && label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
+		fprintf(output_files[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
 }
 
 void _parser_translate_data(void* data) {
@@ -388,7 +372,7 @@ void parser_create_ent_file() {
 
 void _parser_find_label_address(void* data) {
 	unsigned long address;
-	char num_base4_address[5];
+
 	Label* label = data;
 	Label* label_found;
 	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
@@ -400,7 +384,7 @@ void _parser_find_label_address(void* data) {
 	if (label_found->label_type == LABEL_TYPE_DATA)
 		address += IC;
 
-	fprintf(output_files[ENT_FILE], "%s\t%s\n", label_found->label, to_base4(address,4,num_base4_address));
+	fprintf(output_files[ENT_FILE], "%s\t%d\n", label_found->label, base4(address));
 }
 
 int _parser_compare_labels(void* a, void* b) {
