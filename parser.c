@@ -24,34 +24,25 @@ int IC = 0, DC = 0;
 FILE* output_files[3];
 
 const Command commands[] = {
-	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "mov"},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, "cmp"},
-	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "add"},
-	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1, "sub"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "not"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "clr"},
-	{0, 1, 1, 1, 0, 1, 1, 1, 1, 1, "lea"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "inc"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "dec"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "jmp"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "bne"},
-	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1, "red"},
-	{0, 0, 0, 0, 1, 1, 1, 1, 0, 1, "prn"},
-	{0, 0, 0, 0, 0, 1, 0, 0, 0, 1, "jsr"},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "rts"},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "stop"}
+	{"mov", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{"cmp", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{"add", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{"sub", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{"not", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"clr", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"lea", 0, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{"inc", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"dec", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"jmp", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"bne", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"red", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{"prn", 0, 0, 0, 0, 1, 1, 1, 1, 0, 1},
+	{"jsr", 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+	{"rts", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{"stop", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 char* end_of_word;
-
-void extract_data_number(char*, int);
-int extract_string(char*, int, char*);
-void extract_label(char* begin_of_word, char *end_of_word, const int line_num, char * line, LineType line_type);
-long extract_number(char*, const int);
-int extract_operand(char*, int i, int line_num);
-int extract_operand_offset(char* ,int i, int line_num);
-int update_operand(char*, char*, int);
-int add_operand_lines (char*, char*, int, int, int, int);
 
 void parser_parse() {
 
@@ -73,7 +64,7 @@ void parser_parse() {
 		label->label = parser_get_label(line, line_num);
 		begin_of_word = line;
 
-		find_next_non_blank_char(begin_of_word);
+		NextWord(begin_of_word);
 
 		/* Empty line. */
 		if (*begin_of_word == '\0') {
@@ -84,7 +75,7 @@ void parser_parse() {
 		/* Find beginning of next word after label. */
 		if (label->label) {
 			begin_of_word = line + strlen(label->label) + 1;
-			find_next_non_blank_char(begin_of_word);
+			NextWord(begin_of_word);
 		}
 
 		if (*begin_of_word == '\0' && label->label) {
@@ -160,11 +151,11 @@ void parser_parse() {
 
 		line_data->line_word.inst.opcode = i;
 		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
-		find_next_non_blank_char(end_of_word);
+		NextWord(end_of_word);
 		command_type[0] = *end_of_word;
 		if (*end_of_word != '\0') {
 			end_of_word++;
-			find_next_non_blank_char(end_of_word);
+			NextWord(end_of_word);
 			command_type[1] = *end_of_word;
 			command_type[2] = '\0';
 		}
@@ -178,16 +169,18 @@ void parser_parse() {
 
 		if (command_type[1] == '1') {
 			for (j = 0; j < 4; j++) {
-				find_next_non_blank_char(end_of_word);
+				NextWord(end_of_word);
 				command_type[2 + j] = *end_of_word;
 				command_type[2 + j + 1] = '\0';
 				if (*end_of_word != '\0')
 					end_of_word++;
 			}
 
-			if (!(command_type[0] == '/' && command_type[2] == '/' && command_type[4] == '/' &&
-					(command_type[5] == '0' || command_type[5] == '1') &&
-					(command_type[3] == '0' || command_type[3] == '1'))) {
+			if (!(command_type[0] == '/' &&
+				command_type[2] == '/' &&
+				command_type[4] == '/' &&
+				(command_type[5] == '0' || command_type[5] == '1') &&
+				(command_type[3] == '0' || command_type[3] == '1'))) {
 				error_set("Error", "Illegal command type", line_num);
 				continue;
 			}
@@ -207,7 +200,7 @@ void parser_parse() {
 		operand2[0] = '\0';
 		operand1_offset[0] = '\0';
 		operand2_offset[0] = '\0';
-		find_next_non_blank_char(end_of_word);
+		NextWord(end_of_word);
 
 		if (*end_of_word!='\0') {
 			if (!extract_operand(operand1, i, line_num))
@@ -218,11 +211,11 @@ void parser_parse() {
 					continue;
 		}
 
-		find_next_non_blank_char(end_of_word);
+		NextWord(end_of_word);
 		
 		if (*end_of_word == ',') {
 			end_of_word++;
-			find_next_non_blank_char(end_of_word);
+			NextWord(end_of_word);
 			if (!extract_operand(operand2, i, line_num))
 				continue;
 
@@ -231,7 +224,7 @@ void parser_parse() {
 					continue;
 		}
 
-		find_next_non_blank_char(end_of_word);
+		NextWord(end_of_word);
 
 		if (*end_of_word != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
 			error_set("Error", "Illegal parameters.", line_num);
@@ -283,8 +276,9 @@ void parser_translate_commands() {
 	OpenFile(output_files[EXT_FILE], "ext");
 	OpenFile(output_files[OB_FILE], "ob");
 
-	list_foreach(commands_list, &_parser_translate_command);
-	list_foreach(data_list, &_parser_translate_data);
+	list_print(commands_list, stdout, &_parser_print_data_item);
+	/*list_foreach(commands_list, &_parser_translate_command);
+	list_foreach(data_list, &_parser_translate_data);*/
 
 	fclose(output_files[EXT_FILE]);
 	fclose(output_files[OB_FILE]);
@@ -306,6 +300,8 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
 			if (label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += IC;
+
+			printf("%s\n", label_found->label);
 		}
 	}
 
@@ -322,7 +318,8 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			/*printf("Label: %s, Line: %d \n", label_found->label, label_found->line);*/
 			break;
 		case LABEL_TYPE_EXTERN:
-			fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
+			if (!extra_address_offset)
+				fprintf(output_files[EXT_FILE], "%s\t%ld\n", label_found->label, to_base4(line_data->decimal_address + LINE_OFFSET - 1));
 			break;
 		}
 	}
@@ -435,7 +432,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 	num_of_comma = 0;
 
 	while (*end_of_word != '\0') {
-		find_next_non_blank_char(begin_of_word);
+		NextWord(begin_of_word);
 		end_of_word=begin_of_word;
 		if (*begin_of_word == '\0' && num_of_param == 0)
 			error_set("Warning", "Data line contains no data.", line_num);
@@ -486,7 +483,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 		/*if (data_number >= MIN_DATA_NUMBER && data_number <= MAX_DATA_NUMBER)
 			printf("\n data is %ld\n", data_number);*/
 
-		find_next_non_blank_char(end_of_word);
+		NextWord(end_of_word);
 
 		if (*end_of_word == ',') {
 			end_of_word++;
@@ -501,7 +498,7 @@ void extract_data_number(char * begin_of_word, int const line_num) {
 int extract_string(char* begin_of_word, int const line_num, char* line) {
 	LineData* line_data;
 	char * end_of_word;
-	find_next_non_blank_char(begin_of_word);
+	NextWord(begin_of_word);
 
 	if (*begin_of_word != '"') {
 		error_set("Error", "String expected after .string", line_num);
@@ -541,7 +538,7 @@ void extract_label(char * begin_of_word, char *end_of_word, int const line_num, 
 	Label* label;
 	begin_of_word = end_of_word;
 
-	find_next_non_blank_char(begin_of_word);
+	NextWord(begin_of_word);
 
 	if (!isalpha(*begin_of_word)) {
 		error_set("Error", "Not a legal label", line_num);
@@ -670,7 +667,7 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 		j++;
 	}
 
-	if (j == MAX_LABEL_SIZE+1 || *end_of_word!='}') {	
+	if (j == MAX_LABEL_SIZE + 1 || *end_of_word != '}') {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
@@ -773,7 +770,6 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			strcpy(line_data->label_to_extract, operand);
 
 			if (isdigit(*operand_offset)) {
-
 				IC++;
 				line_data = New(LineData);
 				line_data->decimal_address = IC;

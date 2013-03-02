@@ -4,7 +4,7 @@
  */
 
 #ifndef CHAR_H
-#define	CHAR_H
+#define	 CHAR_H
 
 /**
  * Check if a character is either a space or a tab.
@@ -16,6 +16,9 @@
  */
 #define char_isblank(c) ((c) == ' ' || (c) == '\t')
 
-#define find_next_non_blank_char(x) while (char_isblank(*(x))) (x)++
+/**
+ * Advance a string to the beginning of the next word.
+ */
+#define NextWord(x) while (char_isblank(*(x))) (x)++
 
 #endif	/* CHAR_H */

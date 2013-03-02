@@ -42,6 +42,7 @@ enum {ENT_FILE, EXT_FILE, OB_FILE};
  * src_operand and dest_operand are 0 if not in use , and 1 if in use.
  */
 typedef struct {
+	char *command;
 	unsigned int src_imidiate_address :1;
 	unsigned int src_direct_address :1;
 	unsigned int src_index_address :1;
@@ -52,7 +53,6 @@ typedef struct {
 	unsigned int dest_direct_reg_address :1;
 	unsigned int src_operand :1;
 	unsigned int dest_operand :1;
-	char *command;
 } Command;
 
 typedef struct {
@@ -86,6 +86,15 @@ typedef struct {
 	unsigned int line; 
 	LabelType label_type;
 } Label;
+
+void extract_data_number(char*, int);
+int extract_string(char*, int, char*);
+void extract_label(char* begin_of_word, char *end_of_word, const int line_num, char * line, LineType line_type);
+long extract_number(char*, const int);
+int extract_operand(char*, int i, int line_num);
+int extract_operand_offset(char* ,int i, int line_num);
+int update_operand(char*, char*, int);
+int add_operand_lines (char*, char*, int, int, int, int);
 
 /**
  * Does the initial parsing of the assembly file.
