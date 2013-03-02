@@ -286,6 +286,7 @@ void parser_translate_commands() {
 void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
 	Label* label_found = NULL;
 	Label* dummy_label;
+	long address;
 
 	if (line_data->label_to_extract) {
 		dummy_label = New(Label);
@@ -295,15 +296,17 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 		if (!label_found)
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
-		else {
+		else if (label_found->line) {
 			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
 			if (label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += IC;
 		}
 	}
 
-	fprintf(output_files[OB_FILE], "%ld\t", to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
-	fprintf(output_files[OB_FILE], "%010ld\t", to_base4(line_data->line_word.data));
+	/* Avoid adding the offset when the address is zero. */
+	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
+	fprintf(output_files[OB_FILE], "%ld\t%010ld\t\n", to_base4(address), to_base4(line_data->line_word.data));
+	/*printf("%d\t%ld\t%010ld\t\n", line_data->decimal_address, to_base4(address), to_base4(line_data->line_word.data));*/
 
 
 	if (label_found) {
@@ -321,7 +324,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			break;
 		}
 	}
-	fprintf(output_files[OB_FILE], "\n");
+
 }
 
 void _parser_translate_data(void* data) {
