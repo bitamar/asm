@@ -53,18 +53,6 @@ List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(
 	return list;
 } 
 
-void list_print(List list, FILE* stream, void(*_print)(void*, FILE*)) {
-	ListNodePtr p = list;
-	
-	if (!list)
-		return;
-	
-	/* Iterate the list calling _print for each node. */
-	do {		
-		_print(p->data, stream);
-	} while((p = p->next));
-}
-
 void list_foreach(List list, void(*_callback)(void*)) {
 	ListNodePtr p = list;
 
@@ -77,7 +65,7 @@ void list_foreach(List list, void(*_callback)(void*)) {
 	} while((p = p->next));
 }
 
-void list_destruct(List list) {
+void list_destruct(List list, void(*_free_data)(void*)) {
 	ListNodePtr p = list, tmp;
 	
 	if (!list)
@@ -88,7 +76,7 @@ void list_destruct(List list) {
 		/* Store the next node aside, to be able to free the current node. */
 		tmp = p->next;
 		/* Free the node's data and then the node itself. */
-		free(p->data);
+		_free_data(p->data);
 		free(p);
 	} while((p = tmp));
 }

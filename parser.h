@@ -113,6 +113,11 @@ void parser_translate_commands();
 /**
  *
  */
+void parser_clean();
+
+/**
+ *
+ */
 void _parser_translate_data();
 
 /**

@@ -129,7 +129,7 @@ void parser_parse() {
 		line_data->line_word.data = 0;
 		line_data->label_to_extract = NULL;
 		commands_list = list_append(commands_list, line_data);
-		line_data->are='a';
+		line_data->are = 'a';
 
 		/* Command line. */
 		if(label->label) {
@@ -272,6 +272,16 @@ void parser_parse() {
 	}
 }
 
+void _parser_free_label(void* data) {
+	Label* label = data;
+	free(label->label);
+}
+
+void _parser_free_line_data(void* data) {
+	LineData* line_data = data;
+	free(line_data->label_to_extract);
+}
+
 void parser_translate_commands() {
 	OpenFile(output[EXT_FILE], "ext");
 	OpenFile(output[OB_FILE], "ob");
@@ -283,6 +293,18 @@ void parser_translate_commands() {
 	fclose(output[EXT_FILE]);
 	fclose(output[OB_FILE]);
 }
+
+void parser_clean() {
+	/* Free all lists. */
+	list_destruct(parser_symbols, &_parser_free_label);
+	list_destruct(parser_entry_symbols, &_parser_free_label);
+	list_destruct(data_list, &_parser_free_line_data);
+	list_destruct(commands_list, &_parser_free_line_data);
+
+	IC = 0;
+	DC = 0;
+}
+
 
 void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
 	Label* label_found = NULL;

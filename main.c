@@ -15,14 +15,15 @@ int main(int argc, char* argv[]) {
 	/* Open and read files. */
 	for (i = 1; i < argc; i++) {
 		reader_open_file(argv[i]);
-
 		parser_parse();
+		reader_close_file();
 
+		/* Perform "Second iteration". */
 		parser_create_ent_file();
-
 		parser_translate_commands();
 
-		reader_close_file();
+		/* Clean data. */
+		parser_clean();
 	}
 
 	return EXIT_SUCCESS;

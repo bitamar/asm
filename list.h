@@ -51,18 +51,6 @@ List list_append(List list, void* data);
 List list_add_ordered(List list, void* data, int(*_compare)(void*, void*), void(*_duplicate)(void*));
 
 /**
- * Print a list.
- * 
- * @param list
- *   The list head.
- * @param stream
- *   File to print to.
- * @param _print
- *   Call-back function for printing node's data.
- */
-void list_print(List list, FILE* stream, void(*_print)(void*, FILE*));
-
-/**
  * Iterate a list and perform a call-back function on each node.
  *
  * @param list
@@ -77,8 +65,10 @@ void list_foreach(List list, void(*_callback)(void*));
  * 
  * @param list
  *   The list head.
+ * @param _free_data
+ *   Call-back function freeing the data of each node.
  */
-void list_destruct(List list);
+void list_destruct(List list, void(*_free_data)(void*));
 
 /**
  * Find identical item to the given item.
