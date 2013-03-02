@@ -18,4 +18,19 @@
 int base4(int decimal);
 char* base4code(long decimal, char* buffer);
 
+/**
+ * Check if a character is either a space or a tab.
+ *
+ * @param c
+ *   Character to check
+ * @return
+ *   Non-zero if true.
+ */
+#define IsBlank(c) ((c) == ' ' || (c) == '\t')
+
+/**
+ * Advance a string to the beginning of the next word.
+ */
+#define NextWord(x) while (IsBlank(*(x))) (x)++
+
 #endif /* UTILS_H_ */
