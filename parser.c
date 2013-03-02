@@ -276,16 +276,15 @@ void parser_translate_commands() {
 	OpenFile(output_files[EXT_FILE], "ext");
 	OpenFile(output_files[OB_FILE], "ob");
 
-	list_print(commands_list, stdout, &_parser_print_data_item);
-	/*list_foreach(commands_list, &_parser_translate_command);
-	list_foreach(data_list, &_parser_translate_data);*/
+	list_foreach(commands_list, &_parser_translate_command);
+	list_foreach(data_list, &_parser_translate_data);
 
 	fclose(output_files[EXT_FILE]);
 	fclose(output_files[OB_FILE]);
 }
 
 void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
-	Label* label_found;
+	Label* label_found = NULL;
 	Label* dummy_label;
 
 	if (line_data->label_to_extract) {
@@ -300,13 +299,12 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
 			if (label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += IC;
-
-			printf("%s\n", label_found->label);
 		}
 	}
 
 	fprintf(output_files[OB_FILE], "%ld\t", to_base4(line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset));
 	fprintf(output_files[OB_FILE], "%010ld\t", to_base4(line_data->line_word.data));
+
 
 	if (label_found) {
 		switch (label_found->label_type){
