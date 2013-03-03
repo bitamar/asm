@@ -43,8 +43,37 @@ const Command commands[] = {
 
 char* word_end;
 
-void parser_parse() {
+void print_list(List list){
+	Label *label;
+	ListNodePtr p = list;
+	if (!p) {
+		return;
+	}
+	while (p->next) {
+		label = p->data;
 
+		printf("HA! %s:\t%d\t%d\n",label->label, label->label_type, label->line);
+
+		p = p->next;
+	}
+}
+
+void print_data_list(List list){
+	LineData* line_data;
+	ListNodePtr p = list;
+	if (!p) {
+		return;
+	}
+	while (p) {
+		line_data = p->data;
+
+		printf("ARE: %c\tAddress:%d\tLabel: %s\tData: %ld\n", line_data->are, line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
+
+		p = p->next;
+	}
+}
+
+void parser_parse() {
 	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label;
 
@@ -52,6 +81,7 @@ void parser_parse() {
 	/* "address" is used for destination address only. */
 	int line_num = 0, i, j, address;
 
+	printf("Parsing %s.\n", reader_get_file_name(ReaderFileExtension));
 	while ((line = reader_get_line())) {
 		line_num++;
 
@@ -270,6 +300,7 @@ void parser_parse() {
 				continue;
 		}
 	}
+	printf("Parsing finished.\n");
 }
 
 void _parser_free_label(void* data) {
@@ -300,11 +331,18 @@ void parser_clean() {
 	list_destruct(parser_entry_symbols, &_parser_free_label);
 	list_destruct(data_list, &_parser_free_line_data);
 	list_destruct(commands_list, &_parser_free_line_data);
+	parser_symbols = NULL;
+	parser_entry_symbols = NULL;
+	data_list = NULL;
+	commands_list = NULL;
+
+	line_data = NULL;
+
+	word_end = NULL;
 
 	IC = 0;
 	DC = 0;
 }
-
 
 void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
 	Label* label_found = NULL;
@@ -317,7 +355,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 		label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
 		free(dummy_label);
 
-		line_data->are = label_found->label_type == LABEL_TYPE_EXTERN ? 'e' : 'r';
+		line_data->are = label_found && label_found->label_type == LABEL_TYPE_EXTERN ? 'e' : 'r';
 
 		if (!label_found)
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
@@ -467,6 +505,7 @@ void extract_data_number(char * word, int const line_num) {
 		line_data->label_to_extract = NULL;
 		line_data->decimal_address = DC;
 		line_data->line_word.data = data_number;
+
 		data_list = list_append(data_list, line_data);
 
 		num_of_param++;
@@ -757,7 +796,6 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			break;
 
 		case 2:
-
 			if ((!commands[i].src_index_address && work_on_src) || (!commands[i].dest_index_address && !work_on_src)) {
 				error_set("Error", "Illegal address.", line_num);
 				return 0;
@@ -797,8 +835,6 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				strcpy(line_data->label_to_extract, operand_offset);
 				commands_list = list_append(commands_list, line_data);
 			}
-
-
 			break;
 
 		case 3:

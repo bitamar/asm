@@ -67,18 +67,19 @@ void list_foreach(List list, void(*_callback)(void*)) {
 
 void list_destruct(List list, void(*_free_data)(void*)) {
 	ListNodePtr p = list, tmp;
-	
-	if (!list)
-		return;
-	
-	/* Iterate the list calling _free_data for each node. */
-	do {
+
+	while (p) {
 		/* Store the next node aside, to be able to free the current node. */
-		tmp = p->next;
-		/* Free the node's data and then the node itself. */
-		_free_data(p->data);
-		free(p);
-	} while((p = tmp));
+		tmp = p;
+	    p = p->next;
+
+	    /* Free the node's data and then the node itself. */
+	    _free_data(tmp->data);
+	    tmp->data = NULL;
+	    tmp->next = NULL;
+	    free(tmp);
+	}
+	return;
 }
 
 void* list_find_item(List list, void* data, int(*_compare)(void*, void*)) {
