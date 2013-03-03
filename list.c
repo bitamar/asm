@@ -102,5 +102,6 @@ ListNodePtr _list_create_node(void* data) {
 	if (!node)
 		error_fatal(ErrorMemoryAlloc);
 	node->data = data;
+	node->next = NULL;
 	return node;
 }

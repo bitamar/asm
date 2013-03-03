@@ -463,6 +463,8 @@ void extract_data_number(char * word, int const line_num) {
 
 		DC++;
 		line_data = New(LineData);
+		line_data->are = 0;
+		line_data->label_to_extract = NULL;
 		line_data->decimal_address = DC;
 		line_data->line_word.data = data_number;
 		data_list = list_append(data_list, line_data);
@@ -504,6 +506,8 @@ int extract_string(char* word, int const line_num, char* line) {
 	while (word + 1 < word_end) {
 		DC++;
 		line_data = New(LineData);
+		line_data->are = 0;
+		line_data->label_to_extract = NULL;
 		line_data->decimal_address = DC;
 		line_data->line_word.data = *(word + 1);
 		data_list = list_append(data_list, line_data);
@@ -513,6 +517,8 @@ int extract_string(char* word, int const line_num, char* line) {
 
 	DC++;			
 	line_data = New(LineData);
+	line_data->are = 0;
+	line_data->label_to_extract = NULL;
 	line_data->decimal_address = DC;
 	line_data->line_word.data = 0;
 	data_list = list_append(data_list, line_data);
@@ -727,7 +733,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data = New(LineData);
 			line_data->decimal_address = IC;
 			line_data->label_to_extract = NULL;
-			line_data->are='a';
+			line_data->are = 'a';
 			commands_list = list_append(commands_list, line_data);
 
 			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == -1)
@@ -744,7 +750,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data = New(LineData);
 			line_data->decimal_address = IC;
 			line_data->line_word.data = 0;
-			line_data->are='\0';
+			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 			commands_list = list_append(commands_list, line_data);
@@ -761,7 +767,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data = New(LineData);
 			line_data->decimal_address = IC;
 			line_data->line_word.data = 0;
-			line_data->are='\0';
+			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);			
 			commands_list = list_append(commands_list, line_data);
@@ -785,7 +791,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				IC++;
 				line_data = New(LineData);
 				line_data->decimal_address = IC;
-				line_data->are = '\0';
+				line_data->are = 0;
 				line_data->line_word.data = 0;
 				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
 				strcpy(line_data->label_to_extract, operand_offset);

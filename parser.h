@@ -76,7 +76,8 @@ typedef union {
 
 typedef struct {
 	int decimal_address;
-	char are; /*a for absulute, r for relocatable, e for external*/
+	/* a for absolute, r for relocatable, e for external. */
+	char are;
 	char *label_to_extract;
 	Word line_word;
 } LineData;
