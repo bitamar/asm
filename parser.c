@@ -31,7 +31,7 @@ const Command commands[] = {
 
 char* word_end;
 
-void print_list(List list){
+void print_list(List list) {
 	Label *label;
 	ListNodePtr p = list;
 	if (!p) {
@@ -60,10 +60,10 @@ void print_data_list(List list) {
 }
 
 ParserData* parser_parse() {
-	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
-	Label* label;
+	char* line;
+	char operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
+	Label* label = NULL;
 	LineData* line_data = NULL;
-
 	char *word, command_type[7];
 	/* "address" is used for destination address only. */
 	int line_num = 0, i, j, address;
@@ -76,7 +76,7 @@ ParserData* parser_parse() {
 		if (*line == ';')
 			continue;
 
-		label = New(Label);
+		NewLabel(label);
 		label->label = parser_get_label(line, line_num);
 		word = line;
 
@@ -141,10 +141,9 @@ ParserData* parser_parse() {
 		}
 
 		parser_data.IC++;
-		line_data = New(LineData);
+
+		NewLineData(line_data);
 		line_data->decimal_address = parser_data.IC;
-		line_data->line_word.data = 0;
-		line_data->label_to_extract = NULL;
 		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 		line_data->are = 'a';
 
@@ -414,9 +413,7 @@ void extract_data_number(char* word, int const line_num) {
 			data_number = MINUS - data_number;
 
 		parser_data.DC++;
-		line_data = New(LineData);
-		line_data->are = 0;
-		line_data->label_to_extract = NULL;
+		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
 		line_data->line_word.data = data_number;
 
@@ -458,9 +455,7 @@ int extract_string(char* word, int const line_num, char* line) {
 
 	while (word + 1 < word_end) {
 		parser_data.DC++;
-		line_data = New(LineData);
-		line_data->are = 0;
-		line_data->label_to_extract = NULL;
+		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
 		line_data->line_word.data = *(word + 1);
 		parser_data.data_list = list_append(parser_data.data_list, line_data);
@@ -469,11 +464,8 @@ int extract_string(char* word, int const line_num, char* line) {
 	}
 
 	parser_data.DC++;
-	line_data = New(LineData);
-	line_data->are = 0;
-	line_data->label_to_extract = NULL;
+	NewLineData(line_data);
 	line_data->decimal_address = parser_data.DC;
-	line_data->line_word.data = 0;
 	parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 	return 0;
@@ -510,8 +502,7 @@ void extract_label(char * word, char *word_end, int const line_num, char * line,
 
 	/* Insert the label to the external labels list or to the entry labels list.
 	 */
-	label = New(Label);
-
+	NewLabel(label);
 	label->label = (char*)malloc(MAX_LABEL_SIZE + 1);
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
@@ -683,9 +674,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			}
 
 			parser_data.IC++;
-			line_data = New(LineData);
+			NewLineData(line_data);
 			line_data->decimal_address = parser_data.IC;
-			line_data->label_to_extract = NULL;
 			line_data->are = 'a';
 			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 
@@ -700,10 +690,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			}
 
 			parser_data.IC++;
-			line_data = New(LineData);
+			NewLineData(line_data);
 			line_data->decimal_address = parser_data.IC;
-			line_data->line_word.data = 0;
-			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
 			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
@@ -716,10 +704,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			}
 
 			parser_data.IC++;
-			line_data = New(LineData);
+			NewLineData(line_data);
 			line_data->decimal_address = parser_data.IC;
-			line_data->line_word.data = 0;
-			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);			
 			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
@@ -728,9 +714,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
 				parser_data.IC++;
-				line_data = New(LineData);
+				NewLineData(line_data);
 				line_data->decimal_address = parser_data.IC;
-				line_data->label_to_extract = NULL;
 				line_data->are = 'a';
 				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == -1) {
 					error_set("Error", "Illegal address.", line_num);
@@ -741,10 +726,8 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
 				parser_data.IC++;
-				line_data = New(LineData);
+				NewLineData(line_data);
 				line_data->decimal_address = parser_data.IC;
-				line_data->are = 0;
-				line_data->line_word.data = 0;
 				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
 				strcpy(line_data->label_to_extract, operand_offset);
 				parser_data.commands_list = list_append(parser_data.commands_list, line_data);

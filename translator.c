@@ -37,7 +37,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 	long address;
 	char code[CODE_SIZE + 1];
 	if (line_data->label_to_extract) {
-		dummy_label = New(Label);
+		NewLabel(dummy_label);
 		dummy_label->label = line_data->label_to_extract;
 		label_found = list_find_item(parser_data.parser_symbols, dummy_label, &_parser_compare_labels);
 		free(dummy_label);

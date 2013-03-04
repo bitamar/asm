@@ -8,7 +8,17 @@
 #include "list.h"
 #include <stdio.h>
 
-#define New(type) (type *)malloc(sizeof(type))
+#define NewLineData(_line_data) _line_data = (LineData*)malloc(sizeof(LineData));\
+	if (!_line_data) error_fatal(ErrorMemoryAlloc);\
+	_line_data->decimal_address = 0;\
+	_line_data->line_word.data = 0;\
+	_line_data->label_to_extract = NULL;
+
+#define NewLabel(_label) _label = (Label*)malloc(sizeof(Label));\
+	if (!_label) error_fatal(ErrorMemoryAlloc);\
+	_label->label = NULL;\
+	_label->line = 0;\
+	_label->label_type = 0;
 
 #define MAX_LABEL_SIZE 30
 /* 2^19 - 1 = 524287 */

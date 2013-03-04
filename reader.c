@@ -44,7 +44,7 @@ char* reader_get_file_name(const char* extension) {
 	full_length = base_length + strlen(extension) + 1;
 	file_name = (char*)malloc(full_length);
 	if (!file_name)
-		error_fatal(file_name);
+		error_fatal(ErrorMemoryAlloc);
 
 	strcpy(file_name, reader_file_name_base);
 	/* Add the file extension. */
