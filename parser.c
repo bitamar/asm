@@ -370,14 +370,13 @@ void _parser_duplicated_label(void* data) {
 	error_set("Error", "Redeclaring label.", label->line);
 }
 
-void extract_data_number(char * word, int const line_num) {
+void extract_data_number(char* word, int const line_num) {
 	int num_of_param = 0, num_of_comma = 0;
 	long data_number;
 	LineData* line_data;
 	
-	while (*word_end != '\0') {
+	while (*word != '\0') {
 		NextWord(word);
-		word_end=word;
 		if (*word == '\0' && num_of_param == 0)
 			error_set("Warning", "Data line contains no data.", line_num);
 
@@ -389,7 +388,7 @@ void extract_data_number(char * word, int const line_num) {
 			continue;
 		}
 
-		word_end++;
+		word++;
 		data_number = 0;
 		if (isdigit(*word))
 			data_number = *word - '0';
