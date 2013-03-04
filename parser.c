@@ -9,7 +9,6 @@
 #include <string.h>
 
 ParserData parser_data;
-LineData* line_data;
 
 const Command commands[] = {
 	{"mov", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
@@ -63,6 +62,7 @@ void print_data_list(List list) {
 ParserData* parser_parse() {
 	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label;
+	LineData* line_data = NULL;
 
 	char *word, command_type[7];
 	/* "address" is used for destination address only. */
@@ -269,8 +269,8 @@ ParserData* parser_parse() {
 		/* Handling addressing. */
 		/* Two operands exist. */
 		if (*operand2 != '\0') {
-			update_operand(operand1, operand1_offset, 1);
-			update_operand(operand2, operand2_offset, 0);
+			update_operand(line_data, operand1, operand1_offset, 1);
+			update_operand(line_data, operand2, operand2_offset, 0);
 			address = line_data->line_word.inst.dest_address;
 
 			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.src_address))
@@ -282,7 +282,7 @@ ParserData* parser_parse() {
 
 		/* when one operand exists*/
 		if (*operand1 != '\0' && *operand2 == '\0') {
-			update_operand(operand1, operand1_offset, 0);
+			update_operand(line_data, operand1, operand1_offset, 0);
 			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
 				continue;
 		}
@@ -312,8 +312,6 @@ void parser_clean() {
 	parser_data.parser_entry_symbols = NULL;
 	parser_data.data_list = NULL;
 	parser_data.commands_list = NULL;
-
-	line_data = NULL;
 
 	word_end = NULL;
 
@@ -632,7 +630,7 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	return 1;
 }
 
-int update_operand(char *operand,char *operand_offset,int work_on_src) {
+int update_operand(LineData* line_data, char *operand,char *operand_offset,int work_on_src) {
 	/* Index address. */
 
 	if (*operand_offset != '\0') {
@@ -676,7 +674,7 @@ int update_operand(char *operand,char *operand_offset,int work_on_src) {
 }
 
 int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int i, int line_num, int addr) {
-
+	LineData* line_data = NULL;
 	switch (addr) {
 		case 0: 
 			if ((!commands[i].src_imidiate_address && work_on_src) || (!commands[i].dest_imidiate_address && !work_on_src)) {

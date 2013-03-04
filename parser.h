@@ -104,7 +104,7 @@ void extract_label(char* begin_of_word, char *end_of_word, const int line_num, c
 long extract_number(char*, const int);
 int extract_operand(char*, int i, int line_num);
 int extract_operand_offset(char* ,int i, int line_num);
-int update_operand(char*, char*, int);
+int update_operand(LineData* line_data, char *operand,char *operand_offset,int work_on_src);
 int add_operand_lines (char*, char*, int, int, int, int);
 
 /**
