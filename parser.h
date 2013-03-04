@@ -108,6 +108,8 @@ typedef struct {
 	int DC;
 } ParserData;
 
+extern ParserData parser_data;
+
 void extract_data_number(char*, int);
 int extract_string(char*, int, char*);
 void extract_label(char* begin_of_word, char *end_of_word, const int line_num, char * line, LineType line_type);
@@ -123,25 +125,11 @@ int add_operand_lines (char*, char*, int, int, int, int);
  */
 ParserData* parser_parse();
 
-/**
- * Performs "Second phase" commands translation.
- */
-void parser_translate_commands();
 
 /**
  *
  */
 void parser_clean();
-
-/**
- *
- */
-void _parser_translate_data();
-
-/**
- * Create the entry symbols file.
- */
-void parser_create_ent_file();
 
 /**
  * Check whether a line starts with a label.
@@ -172,16 +160,6 @@ int _parser_compare_labels(void* a, void* b);
  *   Pointer to Label.
  */
 void _parser_duplicated_label(void* data);
-
-/**
- *
- */
-void _parser_find_data_item_label(void* data);
-
-/**
- *
- */
-void _parser_find_label_address(void* data);
 
 void print_data_list(List list);
 

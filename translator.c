@@ -6,8 +6,6 @@
 
 FILE* output[3];
 
-extern ParserData parser_data;
-
 void translate() {
 	parser_create_ent_file();
 	parser_translate_commands();
