@@ -393,23 +393,23 @@ void extract_data_number(char* word, int const line_num) {
 		if (isdigit(*word))
 			data_number = *word - '0';
 
-		while (!IsBlank(*word_end) && *word_end != '\0' && *word_end != ',') {
-			if (!isdigit(*word_end)) {
+		while (!IsBlank(*word) && *word != '\0' && *word != ',') {
+			if (!isdigit(*word)) {
 				error_set("Error", "data line contain illegal number", line_num);
 				continue;
 			} 
 			else {
 				/* @TODO: Explain. */
-				data_number = 10 * data_number + *word_end - '0';
+				data_number = 10 * data_number + *word - '0';
 				if ((*word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 					error_set("Error", "number is out of limit", line_num);
-					while (!IsBlank(*word_end) && *word_end != '\0' && *word_end != ',')
-						word_end++;
+					while (!IsBlank(*word) && *word != '\0' && *word != ',')
+						word++;
 
 					continue;
 				}
 			}
-			word_end++;
+			word++;
 		}
 
 		if (*word == '-')
@@ -426,10 +426,10 @@ void extract_data_number(char* word, int const line_num) {
 
 		num_of_param++;
 
-		NextWord(word_end);
+		NextWord(word);
 
-		if (*word_end == ',') {
-			word_end++;
+		if (*word == ',') {
+			word++;
 			num_of_comma++;
 		}
 	}
