@@ -5,6 +5,7 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
+#include "list.h"
 #include <stdio.h>
 
 #define New(type) (type *)malloc(sizeof(type))
@@ -18,18 +19,6 @@
 /* 2^20 = 1048576, for converting  negatives into two's complement. */
 #define MINUS 1048576
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
-
-#define OpenFile(file, extension) {\
-	char* file_name = reader_get_file_name(extension);\
-	file = fopen(file_name, "w");\
-	if (!file) {\
-		fprintf(stderr, ErrorCantRead, file_name);\
-		fprintf(stderr, "\n");\
-		free(file_name);\
-		exit(EXIT_FAILURE);\
-	}\
-	free(file_name);\
-}
 
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 
@@ -91,6 +80,24 @@ typedef struct {
 	LabelType label_type;
 } Label;
 
+/**
+ * Wrapper for parser data.
+ */
+typedef struct {
+	List parser_symbols;
+	List parser_entry_symbols;
+	/* List for data. */
+	List data_list;
+	/* List for commands. */
+	List commands_list;
+	/* Parsing errors counter, for avoiding the second iteration when errors are
+	 * found. */
+	char parser_errors;
+	/* Command and data counters. */
+	int IC;
+	int DC;
+} ParserData;
+
 void extract_data_number(char*, int);
 int extract_string(char*, int, char*);
 void extract_label(char* begin_of_word, char *end_of_word, const int line_num, char * line, LineType line_type);
@@ -104,7 +111,7 @@ int add_operand_lines (char*, char*, int, int, int, int);
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
  */
-void parser_parse();
+ParserData* parser_parse();
 
 /**
  * Performs "Second phase" commands translation.
@@ -166,9 +173,6 @@ void _parser_find_data_item_label(void* data);
  */
 void _parser_find_label_address(void* data);
 
-/**
- *
- */
-void _parser_translate_command(void* data);
+void print_data_list(List list);
 
 #endif /* PARSER_H_ */

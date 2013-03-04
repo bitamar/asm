@@ -8,19 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-List parser_symbols;
-List parser_entry_symbols;
-/* List for data. */
-List data_list;
-/* List for commands. */
-List commands_list;
-
+ParserData parser_data;
 LineData* line_data;
-
-/* Command and data counters. */
-int IC = 0, DC = 0;
-
-FILE* output[3];
 
 const Command commands[] = {
 	{"mov", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
@@ -51,14 +40,12 @@ void print_list(List list){
 	}
 	while (p->next) {
 		label = p->data;
-
-		printf("HA! %s:\t%d\t%d\n",label->label, label->label_type, label->line);
-
+		printf("%s:\t%d\t%d\n", label->label, label->label_type, label->line);
 		p = p->next;
 	}
 }
 
-void print_data_list(List list){
+void print_data_list(List list) {
 	LineData* line_data;
 	ListNodePtr p = list;
 	if (!p) {
@@ -67,13 +54,13 @@ void print_data_list(List list){
 	while (p) {
 		line_data = p->data;
 
-		printf("ARE: %c\tAddress:%d\tLabel: %s\tData: %ld\n", line_data->are, line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
+		printf("\tAddress:%d\tLabel: %s\tData: %ld\n", line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
 
 		p = p->next;
 	}
 }
 
-void parser_parse() {
+ParserData* parser_parse() {
 	char* line, operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label;
 
@@ -124,9 +111,9 @@ void parser_parse() {
 		    || (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/'))
 		    && label->label) {
 
-			label->line = DC + 1;
+			label->line = parser_data.DC + 1;
 			label->label_type = LABEL_TYPE_DATA;
-			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}			
 
 		/* Data line. */
@@ -153,19 +140,19 @@ void parser_parse() {
 			continue;
 		}
 
-		IC++;
+		parser_data.IC++;
 		line_data = New(LineData);
-		line_data->decimal_address = IC;
+		line_data->decimal_address = parser_data.IC;
 		line_data->line_word.data = 0;
 		line_data->label_to_extract = NULL;
-		commands_list = list_append(commands_list, line_data);
+		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 		line_data->are = 'a';
 
 		/* Command line. */
 		if(label->label) {
-			label->line = IC;
+			label->line = parser_data.IC;
 			label->label_type = LABEL_TYPE_COMMAND;
-			parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}
 		
 		if (strlen(line) > 80) {
@@ -300,7 +287,8 @@ void parser_parse() {
 				continue;
 		}
 	}
-	printf("Parsing finished.\n");
+
+	return &parser_data;
 }
 
 void _parser_free_label(void* data) {
@@ -313,74 +301,26 @@ void _parser_free_line_data(void* data) {
 	free(line_data->label_to_extract);
 }
 
-void parser_translate_commands() {
-	OpenFile(output[EXT_FILE], "ext");
-	OpenFile(output[OB_FILE], "ob");
-
-	fprintf(output[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(IC), base4(DC));
-	list_foreach(commands_list, &_parser_translate_command);
-	list_foreach(data_list, &_parser_translate_data);
-
-	fclose(output[EXT_FILE]);
-	fclose(output[OB_FILE]);
-}
-
 void parser_clean() {
 	/* Free all lists. */
-	list_destruct(parser_symbols, &_parser_free_label);
-	list_destruct(parser_entry_symbols, &_parser_free_label);
-	list_destruct(data_list, &_parser_free_line_data);
-	list_destruct(commands_list, &_parser_free_line_data);
-	parser_symbols = NULL;
-	parser_entry_symbols = NULL;
-	data_list = NULL;
-	commands_list = NULL;
+	list_destruct(parser_data.parser_symbols, &_parser_free_label);
+	list_destruct(parser_data.parser_entry_symbols, &_parser_free_label);
+	list_destruct(parser_data.data_list, &_parser_free_line_data);
+	list_destruct(parser_data.commands_list, &_parser_free_line_data);
+
+	parser_data.parser_symbols = NULL;
+	parser_data.parser_entry_symbols = NULL;
+	parser_data.data_list = NULL;
+	parser_data.commands_list = NULL;
 
 	line_data = NULL;
 
 	word_end = NULL;
 
-	IC = 0;
-	DC = 0;
-}
+	parser_data.parser_errors = 0;
 
-void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
-	Label* label_found = NULL;
-	Label* dummy_label;
-	long address;
-	char code[CODE_SIZE + 1];
-	if (line_data->label_to_extract) {
-		dummy_label = New(Label);
-		dummy_label->label = line_data->label_to_extract;
-		label_found = list_find_item(parser_symbols, dummy_label, &_parser_compare_labels);
-		free(dummy_label);
-
-		line_data->are = label_found && label_found->label_type == LABEL_TYPE_EXTERN ? 'e' : 'r';
-
-		if (!label_found)
-			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
-		else if (label_found->line) {
-			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
-			if (label_found->label_type == LABEL_TYPE_DATA)
-				line_data->line_word.data += IC;
-		}
-		else if (label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
-			fprintf(output[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
-	}
-
-	/* Avoid adding the offset when the address is zero. */
-	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(line_data->line_word.data, code), line_data->are);
-}
-
-void _parser_translate_data(void* data) {
-	LineData* line_data = data;
-	_parser_translate_line(line_data, IC);
-}
-
-void _parser_translate_command(void* data) {
-	LineData* line_data = data;
-	_parser_translate_line(line_data, 0);
+	parser_data.IC = 0;
+	parser_data.DC = 0;
 }
 
 char* parser_get_label(const char* line, int line_num) {
@@ -417,29 +357,6 @@ char* parser_get_label(const char* line, int line_num) {
 	}
 
 	return NULL;
-}
-
-void parser_create_ent_file() {
-	OpenFile(output[ENT_FILE], "ent");
-	list_foreach(parser_entry_symbols, &_parser_find_label_address);
-	fclose(output[ENT_FILE]);
-}
-
-void _parser_find_label_address(void* data) {
-	unsigned long address;
-
-	Label* label = data;
-	Label* label_found;
-	label_found = list_find_item(parser_symbols, label, &_parser_compare_labels);
-	if (!label_found) {
-		error_set("Error", "Entry label not defined.", label->line);
-		return;
-	}
-	address = label_found->line + LINE_OFFSET - 1;
-	if (label_found->label_type == LABEL_TYPE_DATA)
-		address += IC;
-
-	fprintf(output[ENT_FILE], "%s\t%d\n", label_found->label, base4(address));
 }
 
 int _parser_compare_labels(void* a, void* b) {
@@ -497,16 +414,16 @@ void extract_data_number(char * word, int const line_num) {
 		}
 
 		if (*word == '-')
-			data_number = MINUS-data_number;
+			data_number = MINUS - data_number;
 
-		DC++;
+		parser_data.DC++;
 		line_data = New(LineData);
 		line_data->are = 0;
 		line_data->label_to_extract = NULL;
-		line_data->decimal_address = DC;
+		line_data->decimal_address = parser_data.DC;
 		line_data->line_word.data = data_number;
 
-		data_list = list_append(data_list, line_data);
+		parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 		num_of_param++;
 
@@ -543,24 +460,24 @@ int extract_string(char* word, int const line_num, char* line) {
 	}
 
 	while (word + 1 < word_end) {
-		DC++;
+		parser_data.DC++;
 		line_data = New(LineData);
 		line_data->are = 0;
 		line_data->label_to_extract = NULL;
-		line_data->decimal_address = DC;
+		line_data->decimal_address = parser_data.DC;
 		line_data->line_word.data = *(word + 1);
-		data_list = list_append(data_list, line_data);
+		parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 		word++;
 	}
 
-	DC++;			
+	parser_data.DC++;
 	line_data = New(LineData);
 	line_data->are = 0;
 	line_data->label_to_extract = NULL;
-	line_data->decimal_address = DC;
+	line_data->decimal_address = parser_data.DC;
 	line_data->line_word.data = 0;
-	data_list = list_append(data_list, line_data);
+	parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 	return 0;
 }
@@ -606,13 +523,13 @@ void extract_label(char * word, char *word_end, int const line_num, char * line,
 	switch (line_type) {
 	case LINE_TYPE_ENTRY:
 		label->line = line_num;
-		parser_entry_symbols = list_add_ordered(parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+		parser_data.parser_entry_symbols = list_add_ordered(parser_data.parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 
 	case LINE_TYPE_EXTERN:
 		label->label_type = LABEL_TYPE_EXTERN;
 		label->line = 0;
-		parser_symbols = list_add_ordered(parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+		parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 	}
 }
@@ -768,12 +685,12 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				return 0;
 			}
 
-			IC++;
+			parser_data.IC++;
 			line_data = New(LineData);
-			line_data->decimal_address = IC;
+			line_data->decimal_address = parser_data.IC;
 			line_data->label_to_extract = NULL;
 			line_data->are = 'a';
-			commands_list = list_append(commands_list, line_data);
+			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 
 			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == -1)
 				return 0;
@@ -785,14 +702,14 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				return 0;
 			}
 
-			IC++;
+			parser_data.IC++;
 			line_data = New(LineData);
-			line_data->decimal_address = IC;
+			line_data->decimal_address = parser_data.IC;
 			line_data->line_word.data = 0;
 			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);
-			commands_list = list_append(commands_list, line_data);
+			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 			break;
 
 		case 2:
@@ -801,39 +718,39 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				return 0;
 			}
 
-			IC++;
+			parser_data.IC++;
 			line_data = New(LineData);
-			line_data->decimal_address = IC;
+			line_data->decimal_address = parser_data.IC;
 			line_data->line_word.data = 0;
 			line_data->are = 0;
 			line_data->label_to_extract = (char*)malloc(strlen(operand) + 1);
 			strcpy(line_data->label_to_extract, operand);			
-			commands_list = list_append(commands_list, line_data);
+			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 		
 			/* Adding offset address. */
 
 			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
-				IC++;
+				parser_data.IC++;
 				line_data = New(LineData);
-				line_data->decimal_address = IC;
+				line_data->decimal_address = parser_data.IC;
 				line_data->label_to_extract = NULL;
 				line_data->are = 'a';
 				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == -1) {
 					error_set("Error", "Illegal address.", line_num);
 					return 0;
 				}
-				commands_list = list_append(commands_list, line_data);
+				parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 			}
 
 			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
-				IC++;
+				parser_data.IC++;
 				line_data = New(LineData);
-				line_data->decimal_address = IC;
+				line_data->decimal_address = parser_data.IC;
 				line_data->are = 0;
 				line_data->line_word.data = 0;
 				line_data->label_to_extract = (char*)malloc(strlen(operand_offset) + 1);
 				strcpy(line_data->label_to_extract, operand_offset);
-				commands_list = list_append(commands_list, line_data);
+				parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 			}
 			break;
 
