@@ -146,6 +146,7 @@ ParserData* parser_parse() {
 		line_data->decimal_address = parser_data.IC;
 		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 		line_data->are = 'a';
+		line_data->line_type = 1;
 
 		/* Command line. */
 		if(label->label) {
