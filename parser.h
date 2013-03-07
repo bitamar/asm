@@ -22,6 +22,8 @@
 	_label->label_type = 0;
 
 #define MaxLabelSize 30
+#define MaxLineSize 80
+#define CommandsAmount 16
 /* 2^19 - 1 = 524287 */
 #define MAX_DATA_NUMBER 524287 
 /* 2^19 - 2^20 = -524288 */
@@ -113,13 +115,11 @@ typedef struct {
 
 extern ParserData parser_data;
 
-
 /**
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
  */
 ParserData* parser_parse();
-
 
 /**
  * Free all of the parser variables.

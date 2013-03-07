@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Parser data, to be passed to the second phase translator. */
 ParserData parser_data;
 
+/* Commands definition. */
 const Command commands[] = {
 	{"mov", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
 	{"cmp", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -616,14 +618,29 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 	return 1;
 }
 
+/**
+ * Does the initial parsing of the assembly file.
+ *
+ * @return
+ *   Structure containing the parsed data, needed for the second phase.
+ */
 ParserData* parser_parse() {
+	/* Beginning of line*/
 	char* line;
-	char operand1[MaxLabelSize + 1], operand1_offset[MaxLabelSize + 1], operand2[MaxLabelSize + 1], operand2_offset[MaxLabelSize + 1];
+	/* Operands. */
+	char operand1[MaxLabelSize + 1], operand2[MaxLabelSize + 1];
+	/* Operands for type 2 addressing */
+	char operand1_offset[MaxLabelSize + 1], operand2_offset[MaxLabelSize + 1];
+	/* Line label. */
 	Label* label = NULL;
+	/* Holds all of the about the line being read. */
 	LineData* line_data = NULL;
-	char *word, command_type[MaxRegisterNumber];
-	/* "address" is used for destination address only. */
-	int line_num = 0, i, j, address;
+	char *word;
+	char command_type[MaxRegisterNumber];
+	/* Used for destination address only. */
+	int address;
+	int line_num = 0;
+	int i, j;
 
 	printf("Parsing %s.\n", reader_get_file_name(ReaderFileExtension));
 	while ((line = reader_get_line())) {
@@ -633,10 +650,12 @@ ParserData* parser_parse() {
 		if (*line == ';')
 			continue;
 
+		/* Create new label. */
 		NewLabel(label);
 		label->label = _parser_get_line_label(line, line_num);
 		word = line;
 
+		/* Finding first word. */
 		NextWord(word);
 
 		/* Empty line. */
@@ -664,12 +683,15 @@ ParserData* parser_parse() {
 		while (!IsBlank(*current_char) && *current_char != '/' && *current_char != '\0')
 			current_char++;
 
+		/* Extracting label of .string or .data lines. */
 		if (((!strncmp(word, ".data", 5) && (current_char - word) == 5 && *current_char != '/')
 		    || (!strncmp(word, ".string", 7) && (current_char - word) == 7 && *current_char != '/'))
 		    && label->label) {
 
+			/* TODO: Explain +1 */
 			label->line = parser_data.DC + 1;
 			label->label_type = LABEL_TYPE_DATA;
+			/* Add the label to the labels list. */
 			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}
 
@@ -697,11 +719,12 @@ ParserData* parser_parse() {
 			continue;
 		}
 
+		/* Insert a instruction line to the line data list. */
 		parser_data.IC++;
-
 		NewLineData(line_data);
 		line_data->decimal_address = parser_data.IC;
 		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
+		/* 'a' is for Absolute. */
 		line_data->are = 'a';
 		line_data->is_instruction = 1;
 
@@ -712,17 +735,19 @@ ParserData* parser_parse() {
 			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}
 
-		if (strlen(line) > 80) {
+		if (strlen(line) > MaxLineSize) {
 			error_set("Error", "Line length exceeding 80 characters.", line_num);
 			continue;
 		}
 
-		for (i = 0; i < 16 && strncmp(word, commands[i].command, current_char - word); i++);
-		if (i == 16) {
+		/* Find command code. */
+		for (i = 0; i < CommandsAmount && strncmp(word, commands[i].command, current_char - word); i++);
+		if (i == CommandsAmount) {
 			error_set("Error", "Unknown command.", line_num);
 			continue;
 		}
 
+		/* Set command code on the line. */
 		line_data->line_word.inst.opcode = i;
 		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
 		NextWord(current_char);
@@ -741,6 +766,7 @@ ParserData* parser_parse() {
 		if (*current_char != '\0')
 			current_char++;
 
+		/* Extract first operand. */
 		if (command_type[1] == '1') {
 			for (j = 0; j < 4; j++) {
 				NextWord(current_char);
@@ -787,6 +813,7 @@ ParserData* parser_parse() {
 
 		NextWord(current_char);
 
+		/* Extract other operands. */
 		if (*current_char == ',') {
 			current_char++;
 			NextWord(current_char);
@@ -837,7 +864,7 @@ ParserData* parser_parse() {
 				continue;
 		}
 
-		/* when one operand exists*/
+		/* When one operand exists. */
 		if (*operand1 != '\0' && *operand2 == '\0') {
 			update_operand(line_data, operand1, operand1_offset, 0);
 			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
