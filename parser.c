@@ -31,266 +31,6 @@ const Command commands[] = {
 
 char* word_end;
 
-void print_list(List list) {
-	Label *label;
-	ListNodePtr p = list;
-	if (!p) {
-		return;
-	}
-	while (p->next) {
-		label = p->data;
-		printf("%s:\t%d\t%d\n", label->label, label->label_type, label->line);
-		p = p->next;
-	}
-}
-
-void print_data_list(List list) {
-	LineData* line_data;
-	ListNodePtr p = list;
-	if (!p) {
-		return;
-	}
-	while (p) {
-		line_data = p->data;
-
-		printf("\tAddress:%d\tLabel: %s\tData: %ld\n", line_data->decimal_address, line_data->label_to_extract, line_data->line_word.data);
-
-		p = p->next;
-	}
-}
-
-ParserData* parser_parse() {
-	char* line;
-	char operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
-	Label* label = NULL;
-	LineData* line_data = NULL;
-	char *word, command_type[7];
-	/* "address" is used for destination address only. */
-	int line_num = 0, i, j, address;
-
-	printf("Parsing %s.\n", reader_get_file_name(ReaderFileExtension));
-	while ((line = reader_get_line())) {
-		line_num++;
-
-		/* Commented-out line. */
-		if (*line == ';')
-			continue;
-
-		NewLabel(label);
-		label->label = parser_get_label(line, line_num);
-		word = line;
-
-		NextWord(word);
-
-		/* Empty line. */
-		if (*word == '\0') {
-			free (label);
-			continue;
-		}
-
-		/* Find beginning of next word after label. */
-		if (label->label) {
-			word = line + strlen(label->label) + 1;
-			NextWord(word);
-		}
-
-		if (*word == '\0' && label->label) {
-			/* Assuming every label declaration must follow commands or
-			 * declaration of data. */
-			error_set("Error", "Label with no command", line_num);
-			free (label);
-			continue;
-		}
-
-		/* Find end of command. */
-		word_end = word + 1;
-		while (!IsBlank(*word_end) && *word_end != '/' && *word_end != '\0')
-			word_end++;
-
-		if (((!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/')
-		    || (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/'))
-		    && label->label) {
-
-			label->line = parser_data.DC + 1;
-			label->label_type = LABEL_TYPE_DATA;
-			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
-		}			
-
-		/* Data line. */
-		if (!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/') {
-			extract_data_number(word_end, line_num);
-			continue;
-		}
-
-		/* String line. */
-		if (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/') {
-			extract_string(word_end, line_num, line);
-			continue;
-		}
-
-		/* Entry label declaration line. */
-		if (!strncmp(word, ".entry", 6) && (word_end - word) == 6 && *word_end != '/') {
-			extract_label(word, word_end, line_num, line, LINE_TYPE_ENTRY);
-			continue;
-		}
-
-		/* External label declaration line. */
-		if (!strncmp(word, ".extern", 7) && (word_end - word) == 7 && *word_end != '/') {
-			extract_label(word, word_end, line_num, line, LINE_TYPE_EXTERN);
-			continue;
-		}
-
-		parser_data.IC++;
-
-		NewLineData(line_data);
-		line_data->decimal_address = parser_data.IC;
-		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
-		line_data->are = 'a';
-		line_data->line_type = 1;
-
-		/* Command line. */
-		if(label->label) {
-			label->line = parser_data.IC;
-			label->label_type = LABEL_TYPE_COMMAND;
-			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
-		}
-		
-		if (strlen(line) > 80) {
-			error_set("Error", "Line length exceeding 80 characters.", line_num);
-			continue;
-		}
-
-		for (i = 0; i < 16 && strncmp(word, commands[i].command, word_end - word); i++);
-		if (i == 16) {
-			error_set("Error", "Unknown command.", line_num);
-			continue;
-		}
-
-		line_data->line_word.inst.opcode = i;
-		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
-		NextWord(word_end);
-		command_type[0] = *word_end;
-		if (*word_end != '\0') {
-			word_end++;
-			NextWord(word_end);
-			command_type[1] = *word_end;
-			command_type[2] = '\0';
-		}
-		if (!(command_type[0] == '/' && (command_type[1] == '0' || command_type[1] == '1'))) {
-			error_set("Error", "Type expected after command.", line_num);
-			continue;
-		}
-
-		if (*word_end != '\0')
-			word_end++;
-
-		if (command_type[1] == '1') {
-			for (j = 0; j < 4; j++) {
-				NextWord(word_end);
-				command_type[2 + j] = *word_end;
-				command_type[2 + j + 1] = '\0';
-				if (*word_end != '\0')
-					word_end++;
-			}
-
-			if (!(command_type[0] == '/' &&
-				command_type[2] == '/' &&
-				command_type[4] == '/' &&
-				(command_type[5] == '0' || command_type[5] == '1') &&
-				(command_type[3] == '0' || command_type[3] == '1'))) {
-				error_set("Error", "Illegal command type", line_num);
-				continue;
-			}
-			
-			line_data->line_word.inst.type = command_type[1] - '0';
-			line_data->line_word.inst.comb = command_type[5] - '0' + 2 * (command_type[3] - '0');
-		}
-
-		/* Verify blank after type. */
-		if (!IsBlank(*word_end) && *word_end != '\0') {
-			error_set("Error", "Blank char is required after command.", line_num);
-			continue;
-		}
-
-		/* Find operands. */
-		operand1[0] = '\0';
-		operand2[0] = '\0';
-		operand1_offset[0] = '\0';
-		operand2_offset[0] = '\0';
-		NextWord(word_end);
-
-		if (*word_end!='\0') {
-			if (!extract_operand(operand1, i, line_num))
-				continue;
-
-			if (*word_end == '{')
-				if (!extract_operand_offset(operand1_offset, i, line_num))
-					continue;
-		}
-
-		NextWord(word_end);
-		
-		if (*word_end == ',') {
-			word_end++;
-			NextWord(word_end);
-			if (!extract_operand(operand2, i, line_num))
-				continue;
-
-			if (*word_end == '{')
-				if (!extract_operand_offset(operand2_offset, i, line_num))
-					continue;
-		}
-
-		NextWord(word_end);
-
-		if (*word_end != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
-			error_set("Error", "Illegal parameters.", line_num);
-			continue;
-		}
-
-		/* No operand required. */
-		if (!commands[i].src_operand && !commands[i].dest_operand && *operand1 != '\0') {
-			error_set("Error", "No operands required", line_num);
-			continue;
-		}
-
-		/* One operand required. */
-		if (!commands[i].src_operand && commands[i].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
-			error_set("Error", "Exactly one operand required.", line_num);
-			continue;
-		}
-
-		/* Two operands required. */
-		if (commands[i].src_operand && commands[i].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
-			error_set("Error", "Two operands required.", line_num);
-			continue;
-		}
-
-		/* Handling addressing. */
-		/* Two operands exist. */
-		if (*operand2 != '\0') {
-			update_operand(line_data, operand1, operand1_offset, 1);
-			update_operand(line_data, operand2, operand2_offset, 0);
-			address = line_data->line_word.inst.dest_address;
-
-			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.src_address))
-				continue;
-
-			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, address))
-				continue;
-		}
-
-		/* when one operand exists*/
-		if (*operand1 != '\0' && *operand2 == '\0') {
-			update_operand(line_data, operand1, operand1_offset, 0);
-			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
-				continue;
-		}
-	}
-
-	return &parser_data;
-}
-
 void _parser_free_label(void* data) {
 	Label* label = data;
 	free(label->label);
@@ -300,6 +40,38 @@ void _parser_free_line_data(void* data) {
 	LineData* line_data = data;
 	free(line_data->label_to_extract);
 }
+
+/**
+ * Callback function for list_add_ordered(); Performs lexicographical comparison
+ * of two labels
+ *
+ * @param a
+ *   Pointer to Label.
+ * @param Label b
+ *   Pointer to Label.
+ *
+ * @return
+ *   positive number if the first label's name is "larger" than the second's
+ *   name.
+ */
+int _parser_compare_labels(void* a, void* b) {
+	Label* label = a;
+	Label* label2 = b;
+	return strcmp(label->label, label2->label);
+}
+
+/**
+ * Callback function for list_add_ordered(); Issues error message when a
+ * duplicated label is declared.
+ *
+ * @param data
+ *   Pointer to Label.
+ */
+void _parser_duplicated_label(void* data) {
+	Label* label = data;
+	error_set("Error", "Redeclaring label.", label->line);
+}
+
 
 void parser_clean() {
 	/* Free all lists. */
@@ -321,6 +93,10 @@ void parser_clean() {
 	parser_data.DC = 0;
 }
 
+/**
+ * Check whether a line starts with a label.
+ * Returns the label as a string. The string must be freed by the invoker.
+ */
 char* parser_get_label(const char* line, int line_num) {
 	int len = 0;
 	char* label;
@@ -355,17 +131,6 @@ char* parser_get_label(const char* line, int line_num) {
 	}
 
 	return NULL;
-}
-
-int _parser_compare_labels(void* a, void* b) {
-	Label* label = a;
-	Label* label2 = b;
-	return strcmp(label->label, label2->label);
-}
-
-void _parser_duplicated_label(void* data) {
-	Label* label = data;
-	error_set("Error", "Redeclaring label.", label->line);
 }
 
 void extract_data_number(char* word, int const line_num) {
@@ -744,4 +509,236 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 		}
 
 	return 1;
+}
+
+ParserData* parser_parse() {
+	char* line;
+	char operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
+	Label* label = NULL;
+	LineData* line_data = NULL;
+	char *word, command_type[7];
+	/* "address" is used for destination address only. */
+	int line_num = 0, i, j, address;
+
+	printf("Parsing %s.\n", reader_get_file_name(ReaderFileExtension));
+	while ((line = reader_get_line())) {
+		line_num++;
+
+		/* Commented-out line. */
+		if (*line == ';')
+			continue;
+
+		NewLabel(label);
+		label->label = parser_get_label(line, line_num);
+		word = line;
+
+		NextWord(word);
+
+		/* Empty line. */
+		if (*word == '\0') {
+			free (label);
+			continue;
+		}
+
+		/* Find beginning of next word after label. */
+		if (label->label) {
+			word = line + strlen(label->label) + 1;
+			NextWord(word);
+		}
+
+		if (*word == '\0' && label->label) {
+			/* Assuming every label declaration must follow commands or
+			 * declaration of data. */
+			error_set("Error", "Label with no command", line_num);
+			free (label);
+			continue;
+		}
+
+		/* Find end of command. */
+		word_end = word + 1;
+		while (!IsBlank(*word_end) && *word_end != '/' && *word_end != '\0')
+			word_end++;
+
+		if (((!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/')
+		    || (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/'))
+		    && label->label) {
+
+			label->line = parser_data.DC + 1;
+			label->label_type = LABEL_TYPE_DATA;
+			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+		}
+
+		/* Data line. */
+		if (!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/') {
+			extract_data_number(word_end, line_num);
+			continue;
+		}
+
+		/* String line. */
+		if (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/') {
+			extract_string(word_end, line_num, line);
+			continue;
+		}
+
+		/* Entry label declaration line. */
+		if (!strncmp(word, ".entry", 6) && (word_end - word) == 6 && *word_end != '/') {
+			extract_label(word, word_end, line_num, line, LINE_TYPE_ENTRY);
+			continue;
+		}
+
+		/* External label declaration line. */
+		if (!strncmp(word, ".extern", 7) && (word_end - word) == 7 && *word_end != '/') {
+			extract_label(word, word_end, line_num, line, LINE_TYPE_EXTERN);
+			continue;
+		}
+
+		parser_data.IC++;
+
+		NewLineData(line_data);
+		line_data->decimal_address = parser_data.IC;
+		parser_data.commands_list = list_append(parser_data.commands_list, line_data);
+		line_data->are = 'a';
+		line_data->line_type = 1;
+
+		/* Command line. */
+		if(label->label) {
+			label->line = parser_data.IC;
+			label->label_type = LABEL_TYPE_COMMAND;
+			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
+		}
+
+		if (strlen(line) > 80) {
+			error_set("Error", "Line length exceeding 80 characters.", line_num);
+			continue;
+		}
+
+		for (i = 0; i < 16 && strncmp(word, commands[i].command, word_end - word); i++);
+		if (i == 16) {
+			error_set("Error", "Unknown command.", line_num);
+			continue;
+		}
+
+		line_data->line_word.inst.opcode = i;
+		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
+		NextWord(word_end);
+		command_type[0] = *word_end;
+		if (*word_end != '\0') {
+			word_end++;
+			NextWord(word_end);
+			command_type[1] = *word_end;
+			command_type[2] = '\0';
+		}
+		if (!(command_type[0] == '/' && (command_type[1] == '0' || command_type[1] == '1'))) {
+			error_set("Error", "Type expected after command.", line_num);
+			continue;
+		}
+
+		if (*word_end != '\0')
+			word_end++;
+
+		if (command_type[1] == '1') {
+			for (j = 0; j < 4; j++) {
+				NextWord(word_end);
+				command_type[2 + j] = *word_end;
+				command_type[2 + j + 1] = '\0';
+				if (*word_end != '\0')
+					word_end++;
+			}
+
+			if (!(command_type[0] == '/' &&
+				command_type[2] == '/' &&
+				command_type[4] == '/' &&
+				(command_type[5] == '0' || command_type[5] == '1') &&
+				(command_type[3] == '0' || command_type[3] == '1'))) {
+				error_set("Error", "Illegal command type", line_num);
+				continue;
+			}
+
+			line_data->line_word.inst.type = command_type[1] - '0';
+			line_data->line_word.inst.comb = command_type[5] - '0' + 2 * (command_type[3] - '0');
+		}
+
+		/* Verify blank after type. */
+		if (!IsBlank(*word_end) && *word_end != '\0') {
+			error_set("Error", "Blank char is required after command.", line_num);
+			continue;
+		}
+
+		/* Find operands. */
+		operand1[0] = '\0';
+		operand2[0] = '\0';
+		operand1_offset[0] = '\0';
+		operand2_offset[0] = '\0';
+		NextWord(word_end);
+
+		if (*word_end!='\0') {
+			if (!extract_operand(operand1, i, line_num))
+				continue;
+
+			if (*word_end == '{')
+				if (!extract_operand_offset(operand1_offset, i, line_num))
+					continue;
+		}
+
+		NextWord(word_end);
+
+		if (*word_end == ',') {
+			word_end++;
+			NextWord(word_end);
+			if (!extract_operand(operand2, i, line_num))
+				continue;
+
+			if (*word_end == '{')
+				if (!extract_operand_offset(operand2_offset, i, line_num))
+					continue;
+		}
+
+		NextWord(word_end);
+
+		if (*word_end != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
+			error_set("Error", "Illegal parameters.", line_num);
+			continue;
+		}
+
+		/* No operand required. */
+		if (!commands[i].src_operand && !commands[i].dest_operand && *operand1 != '\0') {
+			error_set("Error", "No operands required", line_num);
+			continue;
+		}
+
+		/* One operand required. */
+		if (!commands[i].src_operand && commands[i].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
+			error_set("Error", "Exactly one operand required.", line_num);
+			continue;
+		}
+
+		/* Two operands required. */
+		if (commands[i].src_operand && commands[i].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
+			error_set("Error", "Two operands required.", line_num);
+			continue;
+		}
+
+		/* Handling addressing. */
+		/* Two operands exist. */
+		if (*operand2 != '\0') {
+			update_operand(line_data, operand1, operand1_offset, 1);
+			update_operand(line_data, operand2, operand2_offset, 0);
+			address = line_data->line_word.inst.dest_address;
+
+			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.src_address))
+				continue;
+
+			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, address))
+				continue;
+		}
+
+		/* when one operand exists*/
+		if (*operand1 != '\0' && *operand2 == '\0') {
+			update_operand(line_data, operand1, operand1_offset, 0);
+			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
+				continue;
+		}
+	}
+
+	return &parser_data;
 }

@@ -112,14 +112,6 @@ typedef struct {
 
 extern ParserData parser_data;
 
-void extract_data_number(char*, int);
-int extract_string(char*, int, char*);
-void extract_label(char* begin_of_word, char *end_of_word, const int line_num, char * line, LineType line_type);
-long extract_number(char*, const int);
-int extract_operand(char*, int i, int line_num);
-int extract_operand_offset(char* ,int i, int line_num);
-int update_operand(LineData* line_data, char *operand,char *operand_offset,int work_on_src);
-int add_operand_lines (char*, char*, int, int, int, int);
 
 /**
  * Does the initial parsing of the assembly file.
@@ -134,35 +126,18 @@ ParserData* parser_parse();
 void parser_clean();
 
 /**
- * Check whether a line starts with a label.
- * Returns the label as a string. The string must be freed by the invoker.
- */
-char* parser_get_label(const char* line, int line_num);
-
-/**
- * Callback function for list_add_ordered(); Performs lexicographical comparison 
+ * Callback function for list_add_ordered(); Performs lexicographical comparison
  * of two labels
- * 
+ *
  * @param a
  *   Pointer to Label.
  * @param Label b
  *   Pointer to Label.
- * 
- * @return 
- *   positive number if the first label's name is "larger" than the second's 
- *   name.  
+ *
+ * @return
+ *   positive number if the first label's name is "larger" than the second's
+ *   name.
  */
 int _parser_compare_labels(void* a, void* b);
-
-/**
- * Callback function for list_add_ordered(); Issues error message when a 
- * duplicated label is declared.
- *  
- * @param data
- *   Pointer to Label.
- */
-void _parser_duplicated_label(void* data);
-
-void print_data_list(List list);
 
 #endif /* PARSER_H_ */
