@@ -777,7 +777,7 @@ ParserData* parser_parse() {
 		NextWord(current_char);
 
 		if (*current_char!='\0') {
-			if (!validate_operand(operand1, line_num))
+			if (!extract_operand(operand1, line_num))
 				continue;
 
 			if (*current_char == '{')
@@ -790,7 +790,7 @@ ParserData* parser_parse() {
 		if (*current_char == ',') {
 			current_char++;
 			NextWord(current_char);
-			if (!validate_operand(operand2, line_num))
+			if (!extract_operand(operand2, line_num))
 				continue;
 
 			if (*current_char == '{')
