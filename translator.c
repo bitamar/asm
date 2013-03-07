@@ -58,7 +58,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 	data = line_data->line_word.data;
 	if (line_data->is_instruction == 1) {
-		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 8192 * line_data->line_word.inst.type;
+		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 65536 * line_data->line_word.inst.type;
 	}
 
 	/* Avoid adding the offset when the address is zero. */
