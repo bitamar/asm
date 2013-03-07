@@ -13,7 +13,7 @@
 	_line_data->decimal_address = 0;\
 	_line_data->line_word.data = 0;\
 	_line_data->label_to_extract = NULL;\
-	_line_data->line_type = 0;
+	_line_data->is_instruction = 0;
 
 #define NewLabel(_label) _label = (Label*)malloc(sizeof(Label));\
 	if (!_label) error_fatal(ErrorMemoryAlloc);\
@@ -80,7 +80,7 @@ typedef struct {
 	char are;
 	char *label_to_extract;
 	Word line_word;
-	unsigned int line_type :1;
+	unsigned int is_instruction :1;
 } LineData;
 
 /**

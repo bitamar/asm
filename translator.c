@@ -35,10 +35,6 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 	long address;
 	long data;
 	char code[CODE_SIZE + 1];
-	data = line_data->line_word.data;
-	if (line_data->line_type == 1) {
-		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 8192 * line_data->line_word.inst.type;
-	}
 
 	if (line_data->label_to_extract) {
 		NewLabel(dummy_label);
@@ -58,6 +54,11 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 		}
 		else if (label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
 			fprintf(output[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
+	}
+
+	data = line_data->line_word.data;
+	if (line_data->is_instruction == 1) {
+		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 8192 * line_data->line_word.inst.type;
 	}
 
 	/* Avoid adding the offset when the address is zero. */
