@@ -21,7 +21,7 @@
 	_label->line = 0;\
 	_label->label_type = 0;
 
-#define MAX_LABEL_SIZE 30
+#define MaxLabelSize 30
 /* 2^19 - 1 = 524287 */
 #define MAX_DATA_NUMBER 524287 
 /* 2^19 - 2^20 = -524288 */

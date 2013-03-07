@@ -108,33 +108,37 @@ void parser_clean() {
  * Check whether a line starts with a label.
  * Returns the label as a string. The string must be freed by the invoker.
  */
-char* parser_get_label(const char* line, int line_num) {
+char* _parser_get_line_label(const char* line, int line_num) {
 	int len = 0;
 	char* label;
 	const char* c = line;
 
-	label = (char*)malloc(MAX_LABEL_SIZE + 1);
+	label = (char*)malloc(MaxLabelSize + 1);
 	if (!label)
 		error_fatal(ErrorMemoryAlloc);
 
 	/* Iterate the first word in the line, until colon, space or end of line is
 	 * found. */
+	/* Label must start label. */
 	if (!isalpha(*c)) {
 		return NULL;
 	}
 
-	while (isalnum(*c) && len < MAX_LABEL_SIZE) {
+	/* All other characters must be alpha-numeric. */
+	while (isalnum(*c) && len < MaxLabelSize) {
 		c++;
 		len++;
 	}
 
 	if (line[len] == ':') {
+		/* Potential label found. */
+
 		strncpy(label, line, len);
 		label[len] = '\0';
 
-		/* check if label name is a reg name*/
+		/* Check if label name is a register name. */
 		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= MaxRegisterNumber) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
-			error_set("Error", "Illegal label name, same as reg.", line_num);
+			error_set("Error", "Illegal label name, same as register.", line_num);
 			return NULL;
 		}
 
@@ -144,12 +148,22 @@ char* parser_get_label(const char* line, int line_num) {
 	return NULL;
 }
 
+/**
+ * Extract number for .data line.
+ *
+ * @param word
+ *   First character after .data
+ * @param line_num
+ *   The current line number.
+ */
 void extract_data_number(char* word, int const line_num) {
 	int num_of_param = 0, num_of_comma = 0;
 	long data_number;
 	LineData* line_data;
+	char* first_char;
 	
 	while (*word != '\0') {
+		/* Find the beginning of the number */
 		NextWord(word);
 		if (*word == '\0' && num_of_param == 0)
 			error_set("Warning", "Data line contains no data.", line_num);
@@ -157,15 +171,22 @@ void extract_data_number(char* word, int const line_num) {
 		if (*word == '\0')
 			continue;
 		
+		/* Check for legal start of word. */
 		if (*word != '-' && *word != '+' && !isdigit(*word)) {
 			error_set("Error", "Data line contain illegal number", line_num);
 			continue;
 		}
 
-		word++;
+		/* first_char will hold the first symbol in the number. */
+		first_char = word;
+
+		/* data_number will hold the extracted number. */
 		data_number = 0;
+		/* Extract the first digit. */
 		if (isdigit(*word))
 			data_number = *word - '0';
+
+		word++;
 
 		while (!IsBlank(*word) && *word != '\0' && *word != ',') {
 			if (!isdigit(*word)) {
@@ -173,9 +194,10 @@ void extract_data_number(char* word, int const line_num) {
 				continue;
 			} 
 			else {
-				/* @TODO: Explain. */
+				/* Add the next digit to data number (In base 10). */
 				data_number = 10 * data_number + *word - '0';
-				if ((*word == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
+				/* Make sure we're still inside the 20bit limit. */
+				if ((*first_char == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
 					error_set("Error", "number is out of limit", line_num);
 					while (!IsBlank(*word) && *word != '\0' && *word != ',')
 						word++;
@@ -186,14 +208,16 @@ void extract_data_number(char* word, int const line_num) {
 			word++;
 		}
 
-		if (*word == '-')
+		/* Convert to two's complement negative */
+		if (*first_char == '-')
 			data_number = MINUS - data_number;
 
+		/* Increment the data counter. */
 		parser_data.DC++;
+		/* Insert the line data to the list. */
 		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
 		line_data->line_word.data = data_number;
-
 		parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 		num_of_param++;
@@ -205,14 +229,25 @@ void extract_data_number(char* word, int const line_num) {
 			num_of_comma++;
 		}
 	}
+
 	if (num_of_comma != (num_of_param - 1)) {
 		error_set("Warning", "Data line contain spare comma at the end.", line_num);
 	}
 }
 
+/**
+ * Extract strings from .string lines.
+ *
+ * @param word
+ *   The first character after ".string".
+ * @param line_num
+ *   The line number
+ * @param line
+ *   The line string.
+ */
 int extract_string(char* word, int const line_num, char* line) {
 	LineData* line_data;
-	char * current_char;
+	char* current_char;
 	NextWord(word);
 
 	if (*word != '"') {
@@ -220,8 +255,10 @@ int extract_string(char* word, int const line_num, char* line) {
 		return 0;
 	}
 
+	/* Set current char to end of line. */
 	current_char = line + strlen(line) - 1;
 
+	/* Find last non whitespace character. */
 	while (IsBlank(*current_char))
 		current_char--;
 
@@ -230,6 +267,7 @@ int extract_string(char* word, int const line_num, char* line) {
 		return 0;
 	}
 
+	/* Create a data line for every character. */
 	while (word + 1 < current_char) {
 		parser_data.DC++;
 		NewLineData(line_data);
@@ -240,15 +278,31 @@ int extract_string(char* word, int const line_num, char* line) {
 		word++;
 	}
 
+	/* "String delimiter". */
 	parser_data.DC++;
 	NewLineData(line_data);
 	line_data->decimal_address = parser_data.DC;
+	line_data->line_word.data = 0;
 	parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 	return 0;
 }
 
-void extract_label(char * word, char *current_char, int const line_num, char * line, LineType line_type) {
+/**
+ * Used to extract labels from within a line; For .extern and .entry lines.
+ * Adds extern la
+ * @param word
+ *   First character label.
+ * @param current_char
+ *   One character after the end of the label.
+ * @param line_num
+ *   The line number.
+ * @param line
+ *   The line.
+ * @param line_type
+ *   Specifies whether the line is .extern or .entry.
+ */
+void extract_label(char* word, char* current_char, int const line_num, char* line, LineType line_type) {
 	Label* label;
 	word = current_char;
 
@@ -280,7 +334,7 @@ void extract_label(char * word, char *current_char, int const line_num, char * l
 	/* Insert the label to the external labels list or to the entry labels list.
 	 */
 	NewLabel(label);
-	label->label = (char*)malloc(MAX_LABEL_SIZE + 1);
+	label->label = (char*)malloc(MaxLabelSize + 1);
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(label->label, word);
@@ -299,7 +353,7 @@ void extract_label(char * word, char *current_char, int const line_num, char * l
 	}
 }
 
-long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
+long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 	long data_number;
 	int k = 0;
 	
@@ -347,13 +401,13 @@ int extract_operand(char *operand,int i,int line_num ) {
 	*operand = *current_char;
 	current_char++;
 	j = 1;
-	while (isalnum(*current_char) && j <= MAX_LABEL_SIZE) {
+	while (isalnum(*current_char) && j <= MaxLabelSize) {
 		operand[j] = *current_char;
 		current_char++;
 		j++;
 	}
 
-	if (j == MAX_LABEL_SIZE + 1) {
+	if (j == MaxLabelSize + 1) {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
@@ -382,13 +436,13 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 		j++;
  	}
 
-	while (isalnum(*current_char) && j <= MAX_LABEL_SIZE) {
+	while (isalnum(*current_char) && j <= MaxLabelSize) {
 		operand_offset[j] = *current_char;
 		current_char++;
 		j++;
 	}
 
-	if (j == MAX_LABEL_SIZE + 1 || *current_char != '}') {
+	if (j == MaxLabelSize + 1 || *current_char != '}') {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
@@ -524,7 +578,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 ParserData* parser_parse() {
 	char* line;
-	char operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
+	char operand1[MaxLabelSize + 1], operand1_offset[MaxLabelSize + 1], operand2[MaxLabelSize + 1], operand2_offset[MaxLabelSize + 1];
 	Label* label = NULL;
 	LineData* line_data = NULL;
 	char *word, command_type[MaxRegisterNumber];
@@ -540,7 +594,7 @@ ParserData* parser_parse() {
 			continue;
 
 		NewLabel(label);
-		label->label = parser_get_label(line, line_num);
+		label->label = _parser_get_line_label(line, line_num);
 		word = line;
 
 		NextWord(word);
