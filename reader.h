@@ -20,7 +20,8 @@ void reader_open_file(const char* file_name);
 void reader_close_file();
 
 /**
- * Get the currenly open file's name.
+ * Get the currently open file's name.
+ *
  * @param extension
  *   Extension to attach to the file name.
  */

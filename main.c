@@ -5,6 +5,8 @@
 #include <stdlib.h>
 
 /**
+ * Assembler by Sami Dadon and Itamar Bar-Lev.
+ *
  * Main is responsible for initiating the file reading and parsing.
  */
 int main(int argc, char* argv[]) {

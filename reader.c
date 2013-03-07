@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The file being read. */
 FILE* reader_file;
+
 /* The name of the file being currently read, without extension. */
 char* reader_file_name_base;
 
@@ -17,18 +19,17 @@ char* reader_file_name_base;
  * Store the file pointer in the reader's global variable.
  */
 void reader_open_file(const char* file_name) {
-	unsigned int len;
 	char* full_file_name;
 	/* Create a string with the file name and extension. */
-	len = strlen(file_name);
-	reader_file_name_base = (char*)malloc(len + 1);
+	/* Store the file name for error reporting and for creating output files. */
+	reader_file_name_base = (char*)malloc(strlen(file_name) + 1);
 	if (!reader_file_name_base)
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(reader_file_name_base, file_name);
 
 	full_file_name = reader_get_file_name(ReaderFileExtension);
+	/* Open the file. */
 	reader_file = fopen(full_file_name, "r");
-
 	if (!reader_file) {
 		fprintf(stderr, ErrorCantRead, full_file_name);
 		fprintf(stderr, "\n");

@@ -30,6 +30,7 @@
 /* 2^20 = 1048576, for converting  negatives into two's complement. */
 #define MINUS 1048576
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
+#define MaxRegisterNumber 7
 
 typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
 
@@ -121,7 +122,7 @@ ParserData* parser_parse();
 
 
 /**
- *
+ * Free all of the parser variables.
  */
 void parser_clean();
 

@@ -29,21 +29,30 @@ const Command commands[] = {
 	{"stop", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-char* word_end;
+/**
+ * Current char holds the current char in the line being read.
+ */
+char* current_char;
 
+/**
+ * Call-back function for list_destruct. Free a label.
+ */
 void _parser_free_label(void* data) {
 	Label* label = data;
 	free(label->label);
 }
 
+/**
+ * Call-back function for list_destruct. Free one line data.
+ */
 void _parser_free_line_data(void* data) {
 	LineData* line_data = data;
 	free(line_data->label_to_extract);
 }
 
 /**
- * Callback function for list_add_ordered(); Performs lexicographical comparison
- * of two labels
+ * Call-back function for list_add_ordered(); Performs lexicographical
+ * comparison of two labels
  *
  * @param a
  *   Pointer to Label.
@@ -61,7 +70,7 @@ int _parser_compare_labels(void* a, void* b) {
 }
 
 /**
- * Callback function for list_add_ordered(); Issues error message when a
+ * Call-back function for list_add_ordered(); Issues error message when a
  * duplicated label is declared.
  *
  * @param data
@@ -72,7 +81,9 @@ void _parser_duplicated_label(void* data) {
 	error_set("Error", "Redeclaring label.", label->line);
 }
 
-
+/**
+ * Free all of the parser variables.
+ */
 void parser_clean() {
 	/* Free all lists. */
 	list_destruct(parser_data.parser_symbols, &_parser_free_label);
@@ -85,7 +96,7 @@ void parser_clean() {
 	parser_data.data_list = NULL;
 	parser_data.commands_list = NULL;
 
-	word_end = NULL;
+	current_char = NULL;
 
 	parser_data.parser_errors = 0;
 
@@ -122,7 +133,7 @@ char* parser_get_label(const char* line, int line_num) {
 		label[len] = '\0';
 
 		/* check if label name is a reg name*/
-		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= 7) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
+		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= MaxRegisterNumber) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
 			error_set("Error", "Illegal label name, same as reg.", line_num);
 			return NULL;
 		}
@@ -201,7 +212,7 @@ void extract_data_number(char* word, int const line_num) {
 
 int extract_string(char* word, int const line_num, char* line) {
 	LineData* line_data;
-	char * word_end;
+	char * current_char;
 	NextWord(word);
 
 	if (*word != '"') {
@@ -209,17 +220,17 @@ int extract_string(char* word, int const line_num, char* line) {
 		return 0;
 	}
 
-	word_end = line + strlen(line) - 1;
+	current_char = line + strlen(line) - 1;
 
-	while (IsBlank(*word_end))
-		word_end--;
+	while (IsBlank(*current_char))
+		current_char--;
 
-	if (*(word_end) != '"' || word_end == word) {
+	if (*(current_char) != '"' || current_char == word) {
 		error_set("Error", "String expected after .string", line_num);
 		return 0;
 	}
 
-	while (word + 1 < word_end) {
+	while (word + 1 < current_char) {
 		parser_data.DC++;
 		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
@@ -237,9 +248,9 @@ int extract_string(char* word, int const line_num, char* line) {
 	return 0;
 }
 
-void extract_label(char * word, char *word_end, int const line_num, char * line, LineType line_type) {
+void extract_label(char * word, char *current_char, int const line_num, char * line, LineType line_type) {
 	Label* label;
-	word = word_end;
+	word = current_char;
 
 	NextWord(word);
 
@@ -248,20 +259,20 @@ void extract_label(char * word, char *word_end, int const line_num, char * line,
 		return;
 	}
 
-	word_end = line + strlen(line) - 1;
-	while (IsBlank(*word_end))
-		word_end--;
+	current_char = line + strlen(line) - 1;
+	while (IsBlank(*current_char))
+		current_char--;
 
 	/* Check if label name is a register name. */
-	if ((word_end - word == 1 && ((*word == 'r' && (*word_end - '0') >= 0 && (*word_end - '0') <= 7) || !strncmp(word, "PC", 2) || !strncmp(word, "SP", 2))) || (word_end - word == 2 && !strncmp(word, "PSW", 3))) {
+	if ((current_char - word == 1 && ((*word == 'r' && (*current_char - '0') >= 0 && (*current_char - '0') <= MaxRegisterNumber) || !strncmp(word, "PC", 2) || !strncmp(word, "SP", 2))) || (current_char - word == 2 && !strncmp(word, "PSW", 3))) {
 		error_set("Error", "Illegal label name, same as reg.", line_num);
 		return;
 	}
 
-	while (isalnum(*word_end))
-		word_end--;
+	while (isalnum(*current_char))
+		current_char--;
 
-	if (word_end > word) {
+	if (current_char > word) {
 		error_set("Error", "Label expected", line_num);
 		return;
 	}
@@ -328,17 +339,17 @@ long extract_number(char number[MAX_LABEL_SIZE + 1], const int line_num) {
 int extract_operand(char *operand,int i,int line_num ) {
 	int j;
 
-	if (*word_end != '#' && !isalpha(*word_end)) {
+	if (*current_char != '#' && !isalpha(*current_char)) {
 		error_set("Error", "Illegal parameter.", line_num);
 		return 0;
 	}
 
-	*operand = *word_end;
-	word_end++;
+	*operand = *current_char;
+	current_char++;
 	j = 1;
-	while (isalnum(*word_end) && j <= MAX_LABEL_SIZE) {
-		operand[j] = *word_end;
-		word_end++;
+	while (isalnum(*current_char) && j <= MAX_LABEL_SIZE) {
+		operand[j] = *current_char;
+		current_char++;
 		j++;
 	}
 
@@ -350,7 +361,7 @@ int extract_operand(char *operand,int i,int line_num ) {
 	operand[j] = '\0';
 
 	/* Assuming no white chars at middle of operand. */
-	if ((*word_end != '{' && *word_end != ',' && *word_end != '\0' && !IsBlank(*word_end)) || (operand[0] == '#' && *word_end == '{')) {
+	if ((*current_char != '{' && *current_char != ',' && *current_char != '\0' && !IsBlank(*current_char)) || (operand[0] == '#' && *current_char == '{')) {
 		error_set("Error", "Illegal parameter.", line_num);
 		return 0;
 	}
@@ -361,29 +372,29 @@ int extract_operand_offset(char * operand_offset,int i,int line_num) {
 	int j;
 
 	/* Extracting offset for first parameter if any. */
-	word_end++;
+	current_char++;
 
 	j = 0;
 
-	if (*word_end=='+' || *word_end=='-') {
-		operand_offset[0] = *word_end;
-		word_end++;
+	if (*current_char=='+' || *current_char=='-') {
+		operand_offset[0] = *current_char;
+		current_char++;
 		j++;
  	}
 
-	while (isalnum(*word_end) && j <= MAX_LABEL_SIZE) {
-		operand_offset[j] = *word_end;
-		word_end++;
+	while (isalnum(*current_char) && j <= MAX_LABEL_SIZE) {
+		operand_offset[j] = *current_char;
+		current_char++;
 		j++;
 	}
 
-	if (j == MAX_LABEL_SIZE + 1 || *word_end != '}') {
+	if (j == MAX_LABEL_SIZE + 1 || *current_char != '}') {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
 
 	operand_offset[j] = '\0';
-	word_end++;
+	current_char++;
 	return 1;
 }
 
@@ -393,19 +404,19 @@ int update_operand(LineData* line_data, char *operand,char *operand_offset,int w
 	if (*operand_offset != '\0') {
 		if (work_on_src) {
 			line_data->line_word.inst.src_address = 2;
-			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
+			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= MaxRegisterNumber + '0' && strlen(operand_offset) == 2)
 				line_data->line_word.inst.src_reg = operand_offset[1] - '0';
 		}
 		else {
 			line_data->line_word.inst.dest_address = 2;
-			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= '7' && strlen(operand_offset) == 2)
+			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= MaxRegisterNumber + '0' && strlen(operand_offset) == 2)
 				line_data->line_word.inst.dest_reg = operand_offset[1] - '0';
 		}
 		return 0;
 	}
 
 	/* Register address. */
-	if (*operand == 'r' && operand[1] >= '0' && operand[1] <= '7' && strlen(operand) == 2) {
+	if (*operand == 'r' && operand[1] >= '0' && operand[1] <= MaxRegisterNumber + '0' && strlen(operand) == 2) {
 		if (work_on_src) {
 			line_data->line_word.inst.src_address = 3;
 			line_data->line_word.inst.src_reg = operand[1] - '0';
@@ -490,7 +501,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 			}
 
-			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= '7')) {
+			else if (!(*operand_offset == 'r' && strlen(operand_offset) == 2 && *(operand_offset + 1) >= '0' && *(operand_offset + 1) <= MaxRegisterNumber + '0')) {
 				parser_data.IC++;
 				NewLineData(line_data);
 				line_data->decimal_address = parser_data.IC;
@@ -516,7 +527,7 @@ ParserData* parser_parse() {
 	char operand1[MAX_LABEL_SIZE + 1], operand1_offset[MAX_LABEL_SIZE + 1], operand2[MAX_LABEL_SIZE + 1], operand2_offset[MAX_LABEL_SIZE + 1];
 	Label* label = NULL;
 	LineData* line_data = NULL;
-	char *word, command_type[7];
+	char *word, command_type[MaxRegisterNumber];
 	/* "address" is used for destination address only. */
 	int line_num = 0, i, j, address;
 
@@ -555,12 +566,12 @@ ParserData* parser_parse() {
 		}
 
 		/* Find end of command. */
-		word_end = word + 1;
-		while (!IsBlank(*word_end) && *word_end != '/' && *word_end != '\0')
-			word_end++;
+		current_char = word + 1;
+		while (!IsBlank(*current_char) && *current_char != '/' && *current_char != '\0')
+			current_char++;
 
-		if (((!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/')
-		    || (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/'))
+		if (((!strncmp(word, ".data", 5) && (current_char - word) == 5 && *current_char != '/')
+		    || (!strncmp(word, ".string", 7) && (current_char - word) == 7 && *current_char != '/'))
 		    && label->label) {
 
 			label->line = parser_data.DC + 1;
@@ -569,26 +580,26 @@ ParserData* parser_parse() {
 		}
 
 		/* Data line. */
-		if (!strncmp(word, ".data", 5) && (word_end - word) == 5 && *word_end != '/') {
-			extract_data_number(word_end, line_num);
+		if (!strncmp(word, ".data", 5) && (current_char - word) == 5 && *current_char != '/') {
+			extract_data_number(current_char, line_num);
 			continue;
 		}
 
 		/* String line. */
-		if (!strncmp(word, ".string", 7) && (word_end - word) == 7 && *word_end != '/') {
-			extract_string(word_end, line_num, line);
+		if (!strncmp(word, ".string", 7) && (current_char - word) == 7 && *current_char != '/') {
+			extract_string(current_char, line_num, line);
 			continue;
 		}
 
 		/* Entry label declaration line. */
-		if (!strncmp(word, ".entry", 6) && (word_end - word) == 6 && *word_end != '/') {
-			extract_label(word, word_end, line_num, line, LINE_TYPE_ENTRY);
+		if (!strncmp(word, ".entry", 6) && (current_char - word) == 6 && *current_char != '/') {
+			extract_label(word, current_char, line_num, line, LINE_TYPE_ENTRY);
 			continue;
 		}
 
 		/* External label declaration line. */
-		if (!strncmp(word, ".extern", 7) && (word_end - word) == 7 && *word_end != '/') {
-			extract_label(word, word_end, line_num, line, LINE_TYPE_EXTERN);
+		if (!strncmp(word, ".extern", 7) && (current_char - word) == 7 && *current_char != '/') {
+			extract_label(word, current_char, line_num, line, LINE_TYPE_EXTERN);
 			continue;
 		}
 
@@ -612,7 +623,7 @@ ParserData* parser_parse() {
 			continue;
 		}
 
-		for (i = 0; i < 16 && strncmp(word, commands[i].command, word_end - word); i++);
+		for (i = 0; i < 16 && strncmp(word, commands[i].command, current_char - word); i++);
 		if (i == 16) {
 			error_set("Error", "Unknown command.", line_num);
 			continue;
@@ -620,12 +631,12 @@ ParserData* parser_parse() {
 
 		line_data->line_word.inst.opcode = i;
 		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
-		NextWord(word_end);
-		command_type[0] = *word_end;
-		if (*word_end != '\0') {
-			word_end++;
-			NextWord(word_end);
-			command_type[1] = *word_end;
+		NextWord(current_char);
+		command_type[0] = *current_char;
+		if (*current_char != '\0') {
+			current_char++;
+			NextWord(current_char);
+			command_type[1] = *current_char;
 			command_type[2] = '\0';
 		}
 		if (!(command_type[0] == '/' && (command_type[1] == '0' || command_type[1] == '1'))) {
@@ -633,16 +644,16 @@ ParserData* parser_parse() {
 			continue;
 		}
 
-		if (*word_end != '\0')
-			word_end++;
+		if (*current_char != '\0')
+			current_char++;
 
 		if (command_type[1] == '1') {
 			for (j = 0; j < 4; j++) {
-				NextWord(word_end);
-				command_type[2 + j] = *word_end;
+				NextWord(current_char);
+				command_type[2 + j] = *current_char;
 				command_type[2 + j + 1] = '\0';
-				if (*word_end != '\0')
-					word_end++;
+				if (*current_char != '\0')
+					current_char++;
 			}
 
 			if (!(command_type[0] == '/' &&
@@ -659,7 +670,7 @@ ParserData* parser_parse() {
 		}
 
 		/* Verify blank after type. */
-		if (!IsBlank(*word_end) && *word_end != '\0') {
+		if (!IsBlank(*current_char) && *current_char != '\0') {
 			error_set("Error", "Blank char is required after command.", line_num);
 			continue;
 		}
@@ -669,33 +680,33 @@ ParserData* parser_parse() {
 		operand2[0] = '\0';
 		operand1_offset[0] = '\0';
 		operand2_offset[0] = '\0';
-		NextWord(word_end);
+		NextWord(current_char);
 
-		if (*word_end!='\0') {
+		if (*current_char!='\0') {
 			if (!extract_operand(operand1, i, line_num))
 				continue;
 
-			if (*word_end == '{')
+			if (*current_char == '{')
 				if (!extract_operand_offset(operand1_offset, i, line_num))
 					continue;
 		}
 
-		NextWord(word_end);
+		NextWord(current_char);
 
-		if (*word_end == ',') {
-			word_end++;
-			NextWord(word_end);
+		if (*current_char == ',') {
+			current_char++;
+			NextWord(current_char);
 			if (!extract_operand(operand2, i, line_num))
 				continue;
 
-			if (*word_end == '{')
+			if (*current_char == '{')
 				if (!extract_operand_offset(operand2_offset, i, line_num))
 					continue;
 		}
 
-		NextWord(word_end);
+		NextWord(current_char);
 
-		if (*word_end != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
+		if (*current_char != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
 			error_set("Error", "Illegal parameters.", line_num);
 			continue;
 		}
