@@ -290,7 +290,8 @@ int extract_string(char* word, int const line_num, char* line) {
 
 /**
  * Used to extract labels from within a line; For .extern and .entry lines.
- * Adds extern la
+ * Adds the labels to lists.
+ *
  * @param word
  *   First character label.
  * @param current_char
@@ -331,8 +332,7 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 		return;
 	}
 
-	/* Insert the label to the external labels list or to the entry labels list.
-	 */
+	/* Insert the label to the labels list or to the entry labels list. */
 	NewLabel(label);
 	label->label = (char*)malloc(MaxLabelSize + 1);
 	if (!label->label)
@@ -341,11 +341,13 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 
 	switch (line_type) {
 	case LINE_TYPE_ENTRY:
+		/* Add the label the entry labels list. */
 		label->line = line_num;
 		parser_data.parser_entry_symbols = list_add_ordered(parser_data.parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 
 	case LINE_TYPE_EXTERN:
+		/* Add the label the labels list. */
 		label->label_type = LABEL_TYPE_EXTERN;
 		label->line = 0;
 		parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
@@ -353,6 +355,17 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 	}
 }
 
+/**
+ * Extracting relative addressing (Type 2).
+ *
+ * @param number
+ *   String holding the number.
+ * @param line_num
+ *   The line number.
+ *
+ * @return
+ *   The extracted number.
+ */
 long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 	long data_number;
 	int k = 0;
@@ -383,15 +396,27 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 		k++;
 	}
 
+	/* Convert negatives to two's complement. */
 	if (number[0] == '-')
-
-		return MINUS-data_number;
+		return MINUS - data_number;
 
 	return data_number;
 }
 
-int extract_operand(char *operand,int i,int line_num ) {
-	int j;
+/**
+ * Verify that the first operand is legal, while incrementing the current char
+ * to the end of operand.
+ *
+ * @param operand
+ *   String containing operand.
+ * @param line_num
+ *   The line number.
+ *
+ * @return
+ *   1 when the operand are
+ */
+int extract_operand(char* operand, int line_num) {
+	int i = 1;
 
 	if (*current_char != '#' && !isalpha(*current_char)) {
 		error_set("Error", "Illegal parameter.", line_num);
@@ -400,19 +425,18 @@ int extract_operand(char *operand,int i,int line_num ) {
 
 	*operand = *current_char;
 	current_char++;
-	j = 1;
-	while (isalnum(*current_char) && j <= MaxLabelSize) {
-		operand[j] = *current_char;
+	while (isalnum(*current_char) && i <= MaxLabelSize) {
+		operand[i] = *current_char;
 		current_char++;
-		j++;
+		i++;
 	}
 
-	if (j == MaxLabelSize + 1) {
+	if (i == MaxLabelSize + 1) {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
 
-	operand[j] = '\0';
+	operand[i] = '\0';
 
 	/* Assuming no white chars at middle of operand. */
 	if ((*current_char != '{' && *current_char != ',' && *current_char != '\0' && !IsBlank(*current_char)) || (operand[0] == '#' && *current_char == '{')) {
@@ -422,37 +446,53 @@ int extract_operand(char *operand,int i,int line_num ) {
 	return 1;
 }
 
-int extract_operand_offset(char * operand_offset,int i,int line_num) {
-	int j;
+/**
+ * Used for extracting the relative addressing value, while incrementing
+ * current_char the the end of the operand.
+ *
+ * @param operand_offset
+ *   The first character after the opening parenthesis.
+ * @param line_num
+ *   The line number.
+ *
+ * @return
+ *   1 if operand was found.
+ */
+int extract_operand_offset(char* operand_offset, int line_num) {
+	int i = 0;
 
 	/* Extracting offset for first parameter if any. */
 	current_char++;
 
-	j = 0;
-
 	if (*current_char=='+' || *current_char=='-') {
 		operand_offset[0] = *current_char;
 		current_char++;
-		j++;
+		i++;
  	}
 
-	while (isalnum(*current_char) && j <= MaxLabelSize) {
-		operand_offset[j] = *current_char;
+	while (isalnum(*current_char) && i <= MaxLabelSize) {
+		operand_offset[i] = *current_char;
 		current_char++;
-		j++;
+		i++;
 	}
 
-	if (j == MaxLabelSize + 1 || *current_char != '}') {
+	if (i == MaxLabelSize + 1 || *current_char != '}') {
 		error_set("Error", "Illegal operand.", line_num);
 		return 0;
 	}
 
-	operand_offset[j] = '\0';
+	operand_offset[i] = '\0';
 	current_char++;
 	return 1;
 }
 
-int update_operand(LineData* line_data, char *operand,char *operand_offset,int work_on_src) {
+/**
+ * @param line_data
+ * @param operand
+ * @param operand_offset
+ * @param work_on_src
+ */
+int update_operand(LineData* line_data, char* operand,char* operand_offset, int work_on_src) {
 	/* Index address. */
 
 	if (*operand_offset != '\0') {
@@ -737,11 +777,11 @@ ParserData* parser_parse() {
 		NextWord(current_char);
 
 		if (*current_char!='\0') {
-			if (!extract_operand(operand1, i, line_num))
+			if (!validate_operand(operand1, line_num))
 				continue;
 
 			if (*current_char == '{')
-				if (!extract_operand_offset(operand1_offset, i, line_num))
+				if (!extract_operand_offset(operand1_offset, line_num))
 					continue;
 		}
 
@@ -750,11 +790,11 @@ ParserData* parser_parse() {
 		if (*current_char == ',') {
 			current_char++;
 			NextWord(current_char);
-			if (!extract_operand(operand2, i, line_num))
+			if (!validate_operand(operand2, line_num))
 				continue;
 
 			if (*current_char == '{')
-				if (!extract_operand_offset(operand2_offset, i, line_num))
+				if (!extract_operand_offset(operand2_offset, line_num))
 					continue;
 		}
 
