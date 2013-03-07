@@ -33,7 +33,13 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 	Label* label_found = NULL;
 	Label* dummy_label;
 	long address;
+	long data;
 	char code[CODE_SIZE + 1];
+	data = line_data->line_word.data;
+	if (line_data->line_type == 1) {
+		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 8192 * line_data->line_word.inst.type;
+	}
+
 	if (line_data->label_to_extract) {
 		NewLabel(dummy_label);
 		dummy_label->label = line_data->label_to_extract;
@@ -56,7 +62,7 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 
 	/* Avoid adding the offset when the address is zero. */
 	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(line_data->line_word.data, code), line_data->are);
+	fprintf(output[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(data, code), line_data->are);
 }
 
 void _parser_translate_data(void* data) {
