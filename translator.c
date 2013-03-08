@@ -4,9 +4,10 @@
 #include "utils.h"
 #include <stdlib.h>
 
-FILE* output[3];
+FILE* _translate_output_files[3];
 
-void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
+void _translate_line(void* _line_data) {
+	LineData* line_data = _line_data;
 	Label* label_found = NULL;
 	Label* dummy_label;
 	long address;
@@ -25,47 +26,39 @@ void _parser_translate_line(LineData* line_data, unsigned int extra_address_offs
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
 		}
 		else if (label_found->line) {
-			line_data->line_word.data = label_found->line + LINE_OFFSET - 1 + extra_address_offset;
-			if (label_found->label_type == LABEL_TYPE_DATA)
+			line_data->line_word.data = label_found->line + LINE_OFFSET - 1;
+			if (line_data->is_instruction || label_found->label_type == LABEL_TYPE_DATA)
 				line_data->line_word.data += parser_data.IC;
 		}
-		else if (label_found->label_type == LABEL_TYPE_EXTERN && !extra_address_offset)
-			fprintf(output[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
+		else if (label_found->label_type == LABEL_TYPE_EXTERN && !line_data->is_instruction)
+			fprintf(_translate_output_files[EXT_FILE], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LINE_OFFSET - 1));
 	}
 
 	data = line_data->line_word.data;
-	if (line_data->is_instruction == 1) {
+	if (line_data->is_instruction) {
 		data = line_data->line_word.inst.comb + 4 * line_data->line_word.inst.dest_reg + 32 * line_data->line_word.inst.dest_address + 128 * line_data->line_word.inst.src_reg + 1024 * line_data->line_word.inst.src_address + 4096 * line_data->line_word.inst.opcode + 65536 * line_data->line_word.inst.type;
 	}
 
 	/* Avoid adding the offset when the address is zero. */
-	address = line_data->decimal_address + LINE_OFFSET - 1 + extra_address_offset;
-	fprintf(output[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(data, code), line_data->are);
+	address = line_data->decimal_address + LINE_OFFSET - 1;
+	if (!line_data->are)
+		address += parser_data.IC;
+	fprintf(_translate_output_files[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(data, code), line_data->are);
 }
 
-void _parser_translate_data(void* data) {
-	LineData* line_data = data;
-	_parser_translate_line(line_data, parser_data.IC);
+void _translate_commands() {
+	OpenFile(_translate_output_files[EXT_FILE], "ext");
+	OpenFile(_translate_output_files[OB_FILE], "ob");
+
+	fprintf(_translate_output_files[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(parser_data.IC), base4(parser_data.DC));
+	list_foreach(parser_data.commands_list, &_translate_line);
+	list_foreach(parser_data.data_list, &_translate_line);
+
+	fclose(_translate_output_files[EXT_FILE]);
+	fclose(_translate_output_files[OB_FILE]);
 }
 
-void _parser_translate_command(void* data) {
-	LineData* line_data = data;
-	_parser_translate_line(line_data, 0);
-}
-
-void parser_translate_commands() {
-	OpenFile(output[EXT_FILE], "ext");
-	OpenFile(output[OB_FILE], "ob");
-
-	fprintf(output[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(parser_data.IC), base4(parser_data.DC));
-	list_foreach(parser_data.commands_list, &_parser_translate_command);
-	list_foreach(parser_data.data_list, &_parser_translate_data);
-
-	fclose(output[EXT_FILE]);
-	fclose(output[OB_FILE]);
-}
-
-void _parser_find_label_address(void* data) {
+void _translate_find_label_address(void* data) {
 	unsigned long address;
 
 	Label* label = data;
@@ -79,16 +72,16 @@ void _parser_find_label_address(void* data) {
 	if (label_found->label_type == LABEL_TYPE_DATA)
 		address += parser_data.IC;
 
-	fprintf(output[ENT_FILE], "%s\t%d\n", label_found->label, base4(address));
+	fprintf(_translate_output_files[ENT_FILE], "%s\t%d\n", label_found->label, base4(address));
 }
 
-void parser_create_ent_file() {
-	OpenFile(output[ENT_FILE], "ent");
-	list_foreach(parser_data.parser_entry_symbols, &_parser_find_label_address);
-	fclose(output[ENT_FILE]);
+void _translate_create_ent_file() {
+	OpenFile(_translate_output_files[ENT_FILE], "ent");
+	list_foreach(parser_data.parser_entry_symbols, &_translate_find_label_address);
+	fclose(_translate_output_files[ENT_FILE]);
 }
 
 void translate() {
-	parser_create_ent_file();
-	parser_translate_commands();
+	_translate_create_ent_file();
+	_translate_commands();
 }
