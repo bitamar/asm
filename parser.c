@@ -200,7 +200,7 @@ void extract_data_number(char* word, int const line_num) {
 				/* Add the next digit to data number (In base 10). */
 				data_number = 10 * data_number + *word - '0';
 				/* Make sure we're still inside the 20bit limit. */
-				if ((*first_char == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
+				if ((*first_char == '-' && data_number > -1 * MinDataNumber) || data_number > MaxDataNumber) {
 					error_set("Error", "number is out of limit", line_num);
 					while (!IsBlank(*word) && *word != '\0' && *word != ',')
 						word++;
@@ -213,7 +213,7 @@ void extract_data_number(char* word, int const line_num) {
 
 		/* Convert to two's complement negative */
 		if (*first_char == '-')
-			data_number = MINUS - data_number;
+			data_number = Complement - data_number;
 
 		/* Increment the data counter. */
 		parser_data.DC++;
@@ -343,15 +343,15 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 	strcpy(label->label, word);
 
 	switch (line_type) {
-	case LINE_TYPE_ENTRY:
+	case LineTypeEntry:
 		/* Add the label the entry labels list. */
 		label->line = line_num;
 		parser_data.parser_entry_symbols = list_add_ordered(parser_data.parser_entry_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
 
-	case LINE_TYPE_EXTERN:
+	case LineTypeExtern:
 		/* Add the label the labels list. */
-		label->label_type = LABEL_TYPE_EXTERN;
+		label->label_type = LabelTypeExtern;
 		label->line = 0;
 		parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		break;
@@ -391,7 +391,7 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 		
 		else {
 			data_number = 10 * data_number + number[k] - '0';
-			if ((number[0] == '-' && data_number > -1 * MIN_DATA_NUMBER) || data_number > MAX_DATA_NUMBER) {
+			if ((number[0] == '-' && data_number > -1 * MinDataNumber) || data_number > MaxDataNumber) {
 				error_set("Error", "Number out of limit.", line_num);
 				return -1;
 			}
@@ -401,7 +401,7 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 
 	/* Convert negatives to two's complement. */
 	if (number[0] == '-')
-		return MINUS - data_number;
+		return Complement - data_number;
 
 	return data_number;
 }
@@ -691,7 +691,7 @@ int parse() {
 
 			/* TODO: Explain +1 */
 			label->line = parser_data.DC + 1;
-			label->label_type = LABEL_TYPE_DATA;
+			label->label_type = LabelTypeData;
 			/* Add the label to the labels list. */
 			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}
@@ -710,13 +710,13 @@ int parse() {
 
 		/* Entry label declaration line. */
 		if (!strncmp(word, ".entry", 6) && (current_char - word) == 6 && *current_char != '/') {
-			extract_label(word, current_char, line_num, line, LINE_TYPE_ENTRY);
+			extract_label(word, current_char, line_num, line, LineTypeEntry);
 			continue;
 		}
 
 		/* External label declaration line. */
 		if (!strncmp(word, ".extern", 7) && (current_char - word) == 7 && *current_char != '/') {
-			extract_label(word, current_char, line_num, line, LINE_TYPE_EXTERN);
+			extract_label(word, current_char, line_num, line, LineTypeExtern);
 			continue;
 		}
 
@@ -732,7 +732,7 @@ int parse() {
 		/* Command line. */
 		if(label->label) {
 			label->line = parser_data.IC;
-			label->label_type = LABEL_TYPE_COMMAND;
+			label->label_type = LabelTypeCommand;
 			parser_data.parser_symbols = list_add_ordered(parser_data.parser_symbols, label, &_parser_compare_labels, &_parser_duplicated_label);
 		}
 

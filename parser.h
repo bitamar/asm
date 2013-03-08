@@ -23,21 +23,17 @@
 #define CommandsAmount 16
 
 /* 2^19 - 1 = 524287 */
-#define MAX_DATA_NUMBER 524287 
+#define MaxDataNumber 524287
 /* 2^19 - 2^20 = -524288 */
-#define MIN_DATA_NUMBER -524288 
-#define LINE_OFFSET 100
+#define MinDataNumber -524288
 /* 2^20 = 1048576, for converting  negatives into two's complement. */
-#define MINUS 1048576
+#define Complement 1048576
 /* 2*MAX SIZE OF LABEL = 2*30 + 2 FOR {} + 1 FOR END OF TEXT '\0' */
 #define MaxRegisterNumber 7
 
-typedef enum {LINE_TYPE_ENTRY, LINE_TYPE_EXTERN} LineType;
+typedef enum {LineTypeEntry, LineTypeExtern} LineType;
 
-typedef enum {LABEL_TYPE_COMMAND, LABEL_TYPE_DATA, LABEL_TYPE_EXTERN} LabelType;
-
-/* Output files. */
-enum {ENT_FILE, EXT_FILE, OB_FILE};
+typedef enum {LabelTypeCommand, LabelTypeData, LabelTypeExtern} LabelType;
 
 /**
  * Assembler command set.

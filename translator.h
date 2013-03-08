@@ -7,6 +7,12 @@
 
 #include "parser.h"
 
+#define LineOffset 99
+
+
+/* Output files. */
+enum {EntFile, ExtFile, ObFile};
+
 #define OpenFile(file, extension) {\
 	char* file_name = reader_get_file_name(extension);\
 	file = fopen(file_name, "w");\
