@@ -19,7 +19,13 @@
 	free(file_name);\
 }
 
-void translate();
+/**
+ * Perform "second phase" translation of the parsed data.
+ *
+ * @return success
+ *   0 If any errors encountered.
+ */
+int translate();
 
 /**
  * Create the entry symbols file.

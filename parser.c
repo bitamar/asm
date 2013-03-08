@@ -101,7 +101,7 @@ void parser_clean() {
 
 	current_char = NULL;
 
-	parser_data.parser_errors = 0;
+	parser_data.errors = 0;
 
 	parser_data.IC = 0;
 	parser_data.DC = 0;
@@ -169,7 +169,7 @@ void extract_data_number(char* word, int const line_num) {
 		/* Find the beginning of the number */
 		NextWord(word);
 		if (*word == '\0' && num_of_param == 0)
-			error_set("Warning", "Data line contains no data.", line_num);
+			error_set("Error", "Data line contains no data.", line_num);
 
 		if (*word == '\0')
 			continue;
@@ -623,9 +623,9 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
  * Does the initial parsing of the assembly file.
  *
  * @return
- *   Structure containing the parsed data, needed for the second phase.
+ *  0 when any errors where introduced during the parsing.
  */
-ParserData* parser_parse() {
+int parse() {
 	/* Beginning of line*/
 	char* line;
 	/* Operands. */
@@ -873,5 +873,5 @@ ParserData* parser_parse() {
 		}
 	}
 
-	return &parser_data;
+	return !parser_data.errors;
 }

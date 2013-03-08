@@ -109,10 +109,10 @@ typedef struct {
 	List commands_list;
 	/* Parsing errors counter, for avoiding the second iteration when errors are
 	 * found. */
-	char parser_errors;
+	unsigned int errors;
 	/* Command and data counters. */
-	int IC;
-	int DC;
+	unsigned int IC;
+	unsigned int DC;
 } ParserData;
 
 extern ParserData parser_data;
@@ -121,7 +121,7 @@ extern ParserData parser_data;
  * Does the initial parsing of the assembly file.
  * A file must be opened using reader
  */
-ParserData* parser_parse();
+int parse();
 
 /**
  * Free all of the parser variables.

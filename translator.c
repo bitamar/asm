@@ -24,6 +24,7 @@ void _translate_line(void* _line_data) {
 
 		if (!label_found) {
 			fprintf(stderr, "Error: Label \"%s\" not found\n", line_data->label_to_extract);
+			parser_data.errors++;
 		}
 		else if (label_found->line) {
 			line_data->line_word.data = label_found->line + LINE_OFFSET - 1;
@@ -43,6 +44,7 @@ void _translate_line(void* _line_data) {
 	address = line_data->decimal_address + LINE_OFFSET - 1;
 	if (!line_data->are)
 		address += parser_data.IC;
+
 	fprintf(_translate_output_files[OB_FILE], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(data, code), line_data->are);
 }
 
@@ -66,6 +68,7 @@ void _translate_find_label_address(void* data) {
 	label_found = list_find_item(parser_data.parser_symbols, label, &_parser_compare_labels);
 	if (!label_found) {
 		fprintf(stderr, "Error in %s: Entry label not defined.\n", reader_get_file_name(ReaderFileExtension));
+		parser_data.errors++;
 		return;
 	}
 	address = label_found->line + LINE_OFFSET - 1;
@@ -81,7 +84,11 @@ void _translate_create_ent_file() {
 	fclose(_translate_output_files[ENT_FILE]);
 }
 
-void translate() {
+/**
+ * Perform the "Second phase" translation.
+ */
+int translate() {
 	_translate_create_ent_file();
 	_translate_commands();
+	return !parser_data.errors;
 }
