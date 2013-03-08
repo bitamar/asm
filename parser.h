@@ -1,7 +1,3 @@
-/*
- * parser.h
- */
-
 #ifndef PARSER_H_
 #define PARSER_H_
 

@@ -1,7 +1,3 @@
-/*
- * list.h
- */
-
 #ifndef LIST_H_
 #define LIST_H_
 
@@ -75,16 +71,5 @@ void list_destruct(List list, void(*_free_data)(void*));
  * @param
  */
 void* list_find_item(List list, void* item, int(*_compare)(void*, void*));
-
-/**
- * Create a new node.
- * 
- * @param data
- *   Data to be set on the node.
- * 
- * @return 
- *   Pointer to the node.
- */
-ListNodePtr _list_create_node(void* data);
 
 #endif
