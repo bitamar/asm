@@ -19,28 +19,11 @@
 	free(file_name);\
 }
 
-void _parser_translate_command(void* data);
-
 void translate();
-
-/**
- *
- */
-void _parser_translate_data();
 
 /**
  * Create the entry symbols file.
  */
 void parser_create_ent_file();
-
-/**
- * Performs "Second phase" commands translation.
- */
-void parser_translate_commands();
-
-/**
- *
- */
-void _parser_find_label_address(void* data);
 
 #endif

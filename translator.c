@@ -6,29 +6,6 @@
 
 FILE* output[3];
 
-void translate() {
-	parser_create_ent_file();
-	parser_translate_commands();
-}
-
-void parser_translate_commands() {
-	OpenFile(output[EXT_FILE], "ext");
-	OpenFile(output[OB_FILE], "ob");
-
-	fprintf(output[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(parser_data.IC), base4(parser_data.DC));
-	list_foreach(parser_data.commands_list, &_parser_translate_command);
-	list_foreach(parser_data.data_list, &_parser_translate_data);
-
-	fclose(output[EXT_FILE]);
-	fclose(output[OB_FILE]);
-}
-
-void parser_create_ent_file() {
-	OpenFile(output[ENT_FILE], "ent");
-	list_foreach(parser_data.parser_entry_symbols, &_parser_find_label_address);
-	fclose(output[ENT_FILE]);
-}
-
 void _parser_translate_line(LineData* line_data, unsigned int extra_address_offset) {
 	Label* label_found = NULL;
 	Label* dummy_label;
@@ -76,6 +53,18 @@ void _parser_translate_command(void* data) {
 	_parser_translate_line(line_data, 0);
 }
 
+void parser_translate_commands() {
+	OpenFile(output[EXT_FILE], "ext");
+	OpenFile(output[OB_FILE], "ob");
+
+	fprintf(output[OB_FILE], "\t\t\t\t\t%d\t%d\n", base4(parser_data.IC), base4(parser_data.DC));
+	list_foreach(parser_data.commands_list, &_parser_translate_command);
+	list_foreach(parser_data.data_list, &_parser_translate_data);
+
+	fclose(output[EXT_FILE]);
+	fclose(output[OB_FILE]);
+}
+
 void _parser_find_label_address(void* data) {
 	unsigned long address;
 
@@ -91,4 +80,15 @@ void _parser_find_label_address(void* data) {
 		address += parser_data.IC;
 
 	fprintf(output[ENT_FILE], "%s\t%d\n", label_found->label, base4(address));
+}
+
+void parser_create_ent_file() {
+	OpenFile(output[ENT_FILE], "ent");
+	list_foreach(parser_data.parser_entry_symbols, &_parser_find_label_address);
+	fclose(output[ENT_FILE]);
+}
+
+void translate() {
+	parser_create_ent_file();
+	parser_translate_commands();
 }
