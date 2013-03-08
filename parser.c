@@ -85,6 +85,22 @@ void _parser_duplicated_label(void* data) {
 }
 
 /**
+ * Make sure a label doesn't have a register or instruction name.
+ *
+ * @param label
+ *   The label string.
+ * @param line_num
+ *   The line number.
+ */
+void _parser_validate_label(char* label, int line_num) {
+	/* Check if label name is a register name. */
+	return;
+	if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= MaxRegisterNumber) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
+		error_set("Error", "Illegal label name, same as register.\n", line_num);
+	}
+}
+
+/**
  * Free all of the parser variables.
  */
 void parser_clean() {
@@ -134,17 +150,9 @@ char* _parser_get_line_label(const char* line, int line_num) {
 	}
 
 	if (line[len] == ':') {
-		/* Potential label found. */
-
+		/* Label found. */
 		strncpy(label, line, len);
 		label[len] = '\0';
-
-		/* Check if label name is a register name. */
-		if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= MaxRegisterNumber) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
-			error_set("Error", "Illegal label name, same as register.", line_num);
-			return NULL;
-		}
-
 		return label;
 	}
 
@@ -321,12 +329,6 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 	while (IsBlank(*current_char))
 		current_char--;
 
-	/* Check if label name is a register name. */
-	if ((current_char - word == 1 && ((*word == 'r' && (*current_char - '0') >= 0 && (*current_char - '0') <= MaxRegisterNumber) || !strncmp(word, "PC", 2) || !strncmp(word, "SP", 2))) || (current_char - word == 2 && !strncmp(word, "PSW", 3))) {
-		error_set("Error", "Illegal label name, same as reg.", line_num);
-		return;
-	}
-
 	while (isalnum(*current_char))
 		current_char--;
 
@@ -341,6 +343,7 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 	if (!label->label)
 		error_fatal(ErrorMemoryAlloc);
 	strcpy(label->label, word);
+	_parser_validate_label(label->label, line_num);
 
 	switch (line_type) {
 	case LineTypeEntry:
@@ -654,6 +657,8 @@ int parse() {
 		/* Create new label. */
 		NewLabel(label);
 		label->label = _parser_get_line_label(line, line_num);
+		if (label->label)
+			_parser_validate_label(label->label, line_num);
 		word = line;
 
 		/* Finding first word. */
