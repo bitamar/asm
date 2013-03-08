@@ -220,7 +220,7 @@ void extract_data_number(char* word, int const line_num) {
 		/* Insert the line data to the list. */
 		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
-		line_data->line_word.data = data_number;
+		line_data->machine_code.code = data_number;
 		parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 		num_of_param++;
@@ -275,7 +275,7 @@ int extract_string(char* word, int const line_num, char* line) {
 		parser_data.DC++;
 		NewLineData(line_data);
 		line_data->decimal_address = parser_data.DC;
-		line_data->line_word.data = *(word + 1);
+		line_data->machine_code.code = *(word + 1);
 		parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 		word++;
@@ -285,7 +285,7 @@ int extract_string(char* word, int const line_num, char* line) {
 	parser_data.DC++;
 	NewLineData(line_data);
 	line_data->decimal_address = parser_data.DC;
-	line_data->line_word.data = 0;
+	line_data->machine_code.code = 0;
 	parser_data.data_list = list_append(parser_data.data_list, line_data);
 
 	return 0;
@@ -411,12 +411,12 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
  * to the end of operand.
  *
  * @param operand
- *   String containing operand.
+ *   Buffer for the extracted operand.
  * @param line_num
  *   The line number.
  *
  * @return
- *   1 when the operand are
+ *   1 when the operand is valid.
  */
 int extract_operand(char* operand, int line_num) {
 	int i = 1;
@@ -500,14 +500,14 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 
 	if (*operand_offset != '\0') {
 		if (work_on_src) {
-			line_data->line_word.inst.src_address = 2;
+			line_data->machine_code.bits.src_address = 2;
 			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= MaxRegisterNumber + '0' && strlen(operand_offset) == 2)
-				line_data->line_word.inst.src_reg = operand_offset[1] - '0';
+				line_data->machine_code.bits.src_reg = operand_offset[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.dest_address = 2;
+			line_data->machine_code.bits.dest_address = 2;
 			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= MaxRegisterNumber + '0' && strlen(operand_offset) == 2)
-				line_data->line_word.inst.dest_reg = operand_offset[1] - '0';
+				line_data->machine_code.bits.dest_reg = operand_offset[1] - '0';
 		}
 		return 0;
 	}
@@ -515,12 +515,12 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 	/* Register address. */
 	if (*operand == 'r' && operand[1] >= '0' && operand[1] <= MaxRegisterNumber + '0' && strlen(operand) == 2) {
 		if (work_on_src) {
-			line_data->line_word.inst.src_address = 3;
-			line_data->line_word.inst.src_reg = operand[1] - '0';
+			line_data->machine_code.bits.src_address = 3;
+			line_data->machine_code.bits.src_reg = operand[1] - '0';
 		}
 		else {
-			line_data->line_word.inst.dest_address = 3;
-			line_data->line_word.inst.dest_reg = operand[1] - '0';
+			line_data->machine_code.bits.dest_address = 3;
+			line_data->machine_code.bits.dest_reg = operand[1] - '0';
 		}
 		return 0;
 	}
@@ -528,9 +528,9 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 	/* Direct address. */
 	if (*operand != '#') {
 		if (work_on_src)
-			line_data->line_word.inst.src_address = 1;
+			line_data->machine_code.bits.src_address = 1;
 		else 
-			line_data->line_word.inst.dest_address = 1;
+			line_data->machine_code.bits.dest_address = 1;
 		return 0;
 	}
 
@@ -553,7 +553,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			line_data->are = 'a';
 			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 
-			if((line_data->line_word.data = extract_number(&operand[1], line_num)) == -1)
+			if((line_data->machine_code.code = extract_number(&operand[1], line_num)) == -1)
 				return 0;
 			break;
 
@@ -591,7 +591,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				NewLineData(line_data);
 				line_data->decimal_address = parser_data.IC;
 				line_data->are = 'a';
-				if((line_data->line_word.data = extract_number(operand_offset, line_num)) == -1) {
+				if((line_data->machine_code.code = extract_number(operand_offset, line_num)) == -1) {
 					error_set("Error", "Illegal address.", line_num);
 					return 0;
 				}
@@ -684,6 +684,9 @@ int parse() {
 		while (!IsBlank(*current_char) && *current_char != '/' && *current_char != '\0')
 			current_char++;
 
+		/* Update the label in the symbols list only it's a ".data", ".string"
+		 * or an instruction "line." For ".extern" or ".entry", the label is
+		 * ignored. */
 		/* Extracting label of .string or .data lines. */
 		if (((!strncmp(word, ".data", 5) && (current_char - word) == 5 && *current_char != '/')
 		    || (!strncmp(word, ".string", 7) && (current_char - word) == 7 && *current_char != '/'))
@@ -749,7 +752,7 @@ int parse() {
 		}
 
 		/* Set command code on the line. */
-		line_data->line_word.inst.opcode = i;
+		line_data->machine_code.bits.opcode = i;
 		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
 		NextWord(current_char);
 		command_type[0] = *current_char;
@@ -786,8 +789,8 @@ int parse() {
 				continue;
 			}
 
-			line_data->line_word.inst.type = command_type[1] - '0';
-			line_data->line_word.inst.comb = command_type[5] - '0' + 2 * (command_type[3] - '0');
+			line_data->machine_code.bits.type = command_type[1] - '0';
+			line_data->machine_code.bits.comb = command_type[5] - '0' + 2 * (command_type[3] - '0');
 		}
 
 		/* Verify blank after type. */
@@ -856,9 +859,9 @@ int parse() {
 		if (*operand2 != '\0') {
 			update_operand(line_data, operand1, operand1_offset, 1);
 			update_operand(line_data, operand2, operand2_offset, 0);
-			address = line_data->line_word.inst.dest_address;
+			address = line_data->machine_code.bits.dest_address;
 
-			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->line_word.inst.src_address))
+			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->machine_code.bits.src_address))
 				continue;
 
 			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, address))
@@ -868,7 +871,7 @@ int parse() {
 		/* When one operand exists. */
 		if (*operand1 != '\0' && *operand2 == '\0') {
 			update_operand(line_data, operand1, operand1_offset, 0);
-			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->line_word.inst.dest_address))
+			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->machine_code.bits.dest_address))
 				continue;
 		}
 	}

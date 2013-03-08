@@ -41,28 +41,28 @@ void _translate_line(void* _line_data) {
 		}
 		else if (label_found->line) {
 			/* Add the 99 line offset. */
-			line_data->line_word.data = label_found->line + LineOffset;
+			line_data->machine_code.code = label_found->line + LineOffset;
 			/* If it's a data line, add the instructions count to its data. */
 			if (line_data->is_instruction || label_found->label_type == LabelTypeData)
-				line_data->line_word.data += parser_data.IC;
+				line_data->machine_code.code += parser_data.IC;
 		}
 		/* Write external labels the ext file. */
 		else if (label_found->label_type == LabelTypeExtern && !line_data->is_instruction)
 			fprintf(_translate_output_files[ExtFile], "%s\t%d\n", label_found->label, base4(line_data->decimal_address + LineOffset));
 	}
 
-	code = line_data->line_word.data;
+	code = line_data->machine_code.code;
 	if (line_data->is_instruction) {
 		/* When the line is an instruction line, rebulid the code using the
 		 * bits stored under inst, to make sure the code is correct under any
 		 * machine. */
-		code = line_data->line_word.inst.comb; /* *1 = 2^0 */
-		code += line_data->line_word.inst.dest_reg * 4; /* = 2^2 */
-		code += line_data->line_word.inst.dest_address * 32; /* = 2^5 */
-		code += line_data->line_word.inst.src_reg * 128; /* = 2^7 */
-		code += line_data->line_word.inst.src_address * 1024; /* = 2^10 */
-		code += line_data->line_word.inst.opcode * 4096; /* = 2^12 */
-		code += line_data->line_word.inst.type * 65536; /* = 2^16 */
+		code = line_data->machine_code.bits.comb; /* *1 = 2^0 */
+		code += line_data->machine_code.bits.dest_reg * 4; /* = 2^2 */
+		code += line_data->machine_code.bits.dest_address * 32; /* = 2^5 */
+		code += line_data->machine_code.bits.src_reg * 128; /* = 2^7 */
+		code += line_data->machine_code.bits.src_address * 1024; /* = 2^10 */
+		code += line_data->machine_code.bits.opcode * 4096; /* = 2^12 */
+		code += line_data->machine_code.bits.type * 65536; /* = 2^16 */
 	}
 
 	address = line_data->decimal_address + LineOffset;

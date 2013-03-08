@@ -7,7 +7,7 @@
 #define NewLineData(_line_data) _line_data = (LineData*)malloc(sizeof(LineData));\
 	if (!_line_data) error_fatal(ErrorMemoryAlloc);\
 	_line_data->decimal_address = 0;\
-	_line_data->line_word.data = 0;\
+	_line_data->machine_code.code = 0;\
 	_line_data->label_to_extract = NULL;\
 	_line_data->is_instruction = 0;\
 	_line_data->are = 0;
@@ -54,6 +54,9 @@ typedef struct {
 	unsigned int dest_operand :1;
 } Command;
 
+/**
+ * Holds the 20 bit machine code.
+ */
 typedef struct {
 	/* Comb is relevant only when type is 1. */
 	unsigned int comb :2;
@@ -64,19 +67,26 @@ typedef struct {
 	unsigned int opcode :4;
 	unsigned int type :1;
 	unsigned int unused :3;
-} CommandWord;
+} MachineCodeBits;
 
+/**
+ * Union for holding the machine code with both integer and bits
+ * representation.
+ */
 typedef union { 
-	CommandWord inst;
-	unsigned long data;
-} Word;
+	MachineCodeBits bits;
+	unsigned long code;
+} MachineCode;
 
+/**
+ * Structure for holding all the data gathered on a line.
+ */
 typedef struct {
 	int decimal_address;
 	/* a for absolute, r for relocatable, e for external. */
 	char are;
-	char *label_to_extract;
-	Word line_word;
+	char* label_to_extract;
+	MachineCode machine_code;
 	unsigned int is_instruction :1;
 } LineData;
 
