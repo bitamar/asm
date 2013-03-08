@@ -13,7 +13,8 @@
 	_line_data->decimal_address = 0;\
 	_line_data->line_word.data = 0;\
 	_line_data->label_to_extract = NULL;\
-	_line_data->is_instruction = 0;
+	_line_data->is_instruction = 0;\
+	_line_data->are = 0;
 
 #define NewLabel(_label) _label = (Label*)malloc(sizeof(Label));\
 	if (!_label) error_fatal(ErrorMemoryAlloc);\
@@ -24,6 +25,7 @@
 #define MaxLabelSize 30
 #define MaxLineSize 80
 #define CommandsAmount 16
+
 /* 2^19 - 1 = 524287 */
 #define MAX_DATA_NUMBER 524287 
 /* 2^19 - 2^20 = -524288 */

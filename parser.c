@@ -50,6 +50,7 @@ void _parser_free_label(void* data) {
 void _parser_free_line_data(void* data) {
 	LineData* line_data = data;
 	free(line_data->label_to_extract);
+	line_data->are = 0;
 }
 
 /**
