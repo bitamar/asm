@@ -1,7 +1,3 @@
-/*
- * utils.h
- */
-
 #ifndef UTILS_H_
 #define UTILS_H_
 
@@ -16,7 +12,16 @@
  *   The given number converted to base 4.
  */
 int base4(int decimal);
-char* base4code(long decimal, char* buffer);
+
+/**
+ * Convert a decimal number to a ten bits string.
+ *
+ * @param decimal
+ *   The number to convert.
+ * @param buffer
+ *   A buffer to save the string to.
+ */
+void base4code(long decimal, char* buffer);
 
 /**
  * Check if a character is either a space or a tab.

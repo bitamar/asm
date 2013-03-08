@@ -41,7 +41,6 @@ typedef enum {LabelTypeCommand, LabelTypeData, LabelTypeExtern} LabelType;
  * src_operand and dest_operand are 0 if not in use , and 1 if in use.
  */
 typedef struct {
-	char *command;
 	unsigned int src_imidiate_address :1;
 	unsigned int src_direct_address :1;
 	unsigned int src_index_address :1;

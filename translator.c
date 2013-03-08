@@ -72,7 +72,8 @@ void _translate_line(void* _line_data) {
 		address += parser_data.IC;
 
 	/* Print a line to the ob file. */
-	fprintf(_translate_output_files[ObFile], "%d\t\t\t\t%s\t\t%c\n", base4(address), base4code(code, code_buffer), line_data->are);
+	base4code(code, code_buffer);
+	fprintf(_translate_output_files[ObFile], "%d\t\t\t\t%s\t\t%c\n", base4(address), code_buffer, line_data->are);
 }
 
 /**

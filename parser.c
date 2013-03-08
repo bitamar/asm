@@ -11,24 +11,26 @@
 /* Parser data, to be passed to the second phase translator. */
 ParserData parser_data;
 
+const char* command_names[] = {"mov", "cmp", "add", "sub", "not", "clr", "lea", "inc", "dec", "jmp", "bne", "red", "prn", "jsr", "rts", "stop"};
+
 /* Commands definition. */
 const Command commands[] = {
-	{"mov", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
-	{"cmp", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-	{"add", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
-	{"sub", 1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
-	{"not", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"clr", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"lea", 0, 1, 1, 1, 0, 1, 1, 1, 1, 1},
-	{"inc", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"dec", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"jmp", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"bne", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"red", 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
-	{"prn", 0, 0, 0, 0, 1, 1, 1, 1, 0, 1},
-	{"jsr", 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-	{"rts", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{"stop", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{1, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 1, 1, 1, 0, 1, 1, 1, 1, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 1, 1, 1, 1, 0, 1},
+	{0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 /**
@@ -81,7 +83,7 @@ int _parser_compare_labels(void* a, void* b) {
  */
 void _parser_duplicated_label(void* data) {
 	Label* label = data;
-	error_set("Error", "Redeclaring label.", label->line);
+	error_set("Error", "Redeclaring label.\n", label->line);
 }
 
 /**
@@ -177,14 +179,14 @@ void extract_data_number(char* word, int const line_num) {
 		/* Find the beginning of the number */
 		NextWord(word);
 		if (*word == '\0' && num_of_param == 0)
-			error_set("Error", "Data line contains no data.", line_num);
+			error_set("Error", "Data line contains no data.\n", line_num);
 
 		if (*word == '\0')
 			continue;
 		
 		/* Check for legal start of word. */
 		if (*word != '-' && *word != '+' && !isdigit(*word)) {
-			error_set("Error", "Data line contain illegal number", line_num);
+			error_set("Error", "Data line contain illegal number.\n", line_num);
 			continue;
 		}
 
@@ -201,7 +203,7 @@ void extract_data_number(char* word, int const line_num) {
 
 		while (!IsBlank(*word) && *word != '\0' && *word != ',') {
 			if (!isdigit(*word)) {
-				error_set("Error", "data line contain illegal number", line_num);
+				error_set("Error", "Data line contain illegal number.\n", line_num);
 				continue;
 			} 
 			else {
@@ -209,7 +211,7 @@ void extract_data_number(char* word, int const line_num) {
 				data_number = 10 * data_number + *word - '0';
 				/* Make sure we're still inside the 20bit limit. */
 				if ((*first_char == '-' && data_number > -1 * MinDataNumber) || data_number > MaxDataNumber) {
-					error_set("Error", "number is out of limit", line_num);
+					error_set("Error", "Number is out of limit.\n", line_num);
 					while (!IsBlank(*word) && *word != '\0' && *word != ',')
 						word++;
 
@@ -242,7 +244,7 @@ void extract_data_number(char* word, int const line_num) {
 	}
 
 	if (num_of_comma != (num_of_param - 1)) {
-		error_set("Warning", "Data line contain spare comma at the end.", line_num);
+		error_set("Warning", "Data line contain spare comma at the end.\n", line_num);
 	}
 }
 
@@ -262,7 +264,7 @@ int extract_string(char* word, int const line_num, char* line) {
 	NextWord(word);
 
 	if (*word != '"') {
-		error_set("Error", "String expected after .string", line_num);
+		error_set("Error", "String expected after \".string\".\n", line_num);
 		return 0;
 	}
 
@@ -274,7 +276,7 @@ int extract_string(char* word, int const line_num, char* line) {
 		current_char--;
 
 	if (*(current_char) != '"' || current_char == word) {
-		error_set("Error", "String expected after .string", line_num);
+		error_set("Error", "String expected after \".string\".\n", line_num);
 		return 0;
 	}
 
@@ -321,7 +323,7 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 	NextWord(word);
 
 	if (!isalpha(*word)) {
-		error_set("Error", "Not a legal label", line_num);
+		error_set("Error", "Not a legal label.\n", line_num);
 		return;
 	}
 
@@ -333,7 +335,7 @@ void extract_label(char* word, char* current_char, int const line_num, char* lin
 		current_char--;
 
 	if (current_char > word) {
-		error_set("Error", "Label expected", line_num);
+		error_set("Error", "Label expected.\n", line_num);
 		return;
 	}
 
@@ -377,7 +379,7 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 	int k = 0;
 	
 	if (number[0] != '-' && number[0] != '+' && !isdigit(number[0])) {
-		error_set("Error", "Illegal operand, expect number after.", line_num);
+		error_set("Error", "Illegal operand, expect number after.\n", line_num);
 		return -1;
 	}
 	
@@ -388,14 +390,14 @@ long extract_number(char number[MaxLabelSize + 1], const int line_num) {
 
 	while (number[k] != '\0') {
 		if (!isdigit(number[k])) {
-			error_set("Error", "Illegal number.", line_num);
+			error_set("Error", "Illegal number.\n", line_num);
 			return -1;
 		} 
 		
 		else {
 			data_number = 10 * data_number + number[k] - '0';
 			if ((number[0] == '-' && data_number > -1 * MinDataNumber) || data_number > MaxDataNumber) {
-				error_set("Error", "Number out of limit.", line_num);
+				error_set("Error", "Number out of limit.\n", line_num);
 				return -1;
 			}
 		}
@@ -425,7 +427,7 @@ int extract_operand(char* operand, int line_num) {
 	int i = 1;
 
 	if (*current_char != '#' && !isalpha(*current_char)) {
-		error_set("Error", "Illegal parameter.", line_num);
+		error_set("Error", "Illegal parameter.\n", line_num);
 		return 0;
 	}
 
@@ -438,7 +440,7 @@ int extract_operand(char* operand, int line_num) {
 	}
 
 	if (i == MaxLabelSize + 1) {
-		error_set("Error", "Illegal operand.", line_num);
+		error_set("Error", "Illegal operand.\n", line_num);
 		return 0;
 	}
 
@@ -446,7 +448,7 @@ int extract_operand(char* operand, int line_num) {
 
 	/* Assuming no white chars at middle of operand. */
 	if ((*current_char != '{' && *current_char != ',' && *current_char != '\0' && !IsBlank(*current_char)) || (operand[0] == '#' && *current_char == '{')) {
-		error_set("Error", "Illegal parameter.", line_num);
+		error_set("Error", "Illegal parameter.\n", line_num);
 		return 0;
 	}
 	return 1;
@@ -483,7 +485,7 @@ int extract_operand_offset(char* operand_offset, int line_num) {
 	}
 
 	if (i == MaxLabelSize + 1 || *current_char != '}') {
-		error_set("Error", "Illegal operand.", line_num);
+		error_set("Error", "Illegal operand.\n", line_num);
 		return 0;
 	}
 
@@ -546,7 +548,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 	switch (addr) {
 		case 0: 
 			if ((!commands[i].src_imidiate_address && work_on_src) || (!commands[i].dest_imidiate_address && !work_on_src)) {
-				error_set("Error", "Illegal address.", line_num);
+				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
 
@@ -562,7 +564,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 		case 1:
 			if ((!commands[i].src_direct_address && work_on_src) || (!commands[i].dest_direct_address && !work_on_src)) {
-				error_set("Error", "Illegal address.", line_num);
+				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
 
@@ -576,7 +578,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 		case 2:
 			if ((!commands[i].src_index_address && work_on_src) || (!commands[i].dest_index_address && !work_on_src)) {
-				error_set("Error", "Illegal address.", line_num);
+				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
 
@@ -595,7 +597,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 				line_data->decimal_address = parser_data.IC;
 				line_data->are = 'a';
 				if((line_data->machine_code.code = extract_number(operand_offset, line_num)) == -1) {
-					error_set("Error", "Illegal address.", line_num);
+					error_set("Error", "Illegal address.\n", line_num);
 					return 0;
 				}
 				parser_data.commands_list = list_append(parser_data.commands_list, line_data);
@@ -613,7 +615,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 
 		case 3:
 			if  ((!commands[i].src_direct_reg_address && work_on_src) || (!commands[i].dest_direct_reg_address && !work_on_src)) {
-				error_set("Error", "Illegal address.", line_num);
+				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
 			break;
@@ -679,7 +681,7 @@ int parse() {
 		if (*word == '\0' && label->label) {
 			/* Assuming every label declaration must follow commands or
 			 * declaration of data. */
-			error_set("Error", "Label with no command", line_num);
+			error_set("Error", "Label with no command.\n", line_num);
 			free (label);
 			continue;
 		}
@@ -745,14 +747,14 @@ int parse() {
 		}
 
 		if (strlen(line) > MaxLineSize) {
-			error_set("Error", "Line length exceeding 80 characters.", line_num);
+			error_set("Error", "Line length exceeding 80 characters.\n", line_num);
 			continue;
 		}
 
 		/* Find command code. */
-		for (i = 0; i < CommandsAmount && strncmp(word, commands[i].command, current_char - word); i++);
+		for (i = 0; i < CommandsAmount && strncmp(word, command_names[i], current_char - word); i++);
 		if (i == CommandsAmount) {
-			error_set("Error", "Unknown command.", line_num);
+			error_set("Error", "Unknown command.\n", line_num);
 			continue;
 		}
 
@@ -768,7 +770,7 @@ int parse() {
 			command_type[2] = '\0';
 		}
 		if (!(command_type[0] == '/' && (command_type[1] == '0' || command_type[1] == '1'))) {
-			error_set("Error", "Type expected after command.", line_num);
+			error_set("Error", "Type expected after command.\n", line_num);
 			continue;
 		}
 
@@ -790,7 +792,7 @@ int parse() {
 				command_type[4] == '/' &&
 				(command_type[5] == '0' || command_type[5] == '1') &&
 				(command_type[3] == '0' || command_type[3] == '1'))) {
-				error_set("Error", "Illegal command type", line_num);
+				error_set("Error", "Illegal command type.\n", line_num);
 				continue;
 			}
 
@@ -800,7 +802,7 @@ int parse() {
 
 		/* Verify blank after type. */
 		if (!IsBlank(*current_char) && *current_char != '\0') {
-			error_set("Error", "Blank char is required after command.", line_num);
+			error_set("Error", "Blank char is required after command.\n", line_num);
 			continue;
 		}
 
@@ -837,25 +839,25 @@ int parse() {
 		NextWord(current_char);
 
 		if (*current_char != '\0' || (*operand1 == '#' && *operand1_offset != '\0') || (*operand2 == '#' && *operand2_offset != '\0')) {
-			error_set("Error", "Illegal parameters.", line_num);
+			error_set("Error", "Illegal parameters.\n", line_num);
 			continue;
 		}
 
 		/* No operand required. */
 		if (!commands[i].src_operand && !commands[i].dest_operand && *operand1 != '\0') {
-			error_set("Error", "No operands required", line_num);
+			error_set("Error", "No operands required.\n", line_num);
 			continue;
 		}
 
 		/* One operand required. */
 		if (!commands[i].src_operand && commands[i].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
-			error_set("Error", "Exactly one operand required.", line_num);
+			error_set("Error", "Exactly one operand required.\n", line_num);
 			continue;
 		}
 
 		/* Two operands required. */
 		if (commands[i].src_operand && commands[i].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
-			error_set("Error", "Two operands required.", line_num);
+			error_set("Error", "Two operands required.\n", line_num);
 			continue;
 		}
 
