@@ -501,12 +501,16 @@ int extract_operand_offset(char* operand_offset, int line_num) {
 }
 
 /**
+ * Update operand data on a line.
+ *
  * @param line_data
+ *   LineData object to update.
  * @param operand
  * @param operand_offset
  * @param work_on_src
+ *   Whether to set the source or destination address.
  */
-int update_operand(LineData* line_data, char* operand,char* operand_offset, int work_on_src) {
+void update_operand(LineData* line_data, char* operand,char* operand_offset, int work_on_src) {
 	/* Index address. */
 
 	if (*operand_offset != '\0') {
@@ -520,7 +524,7 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 			if (*operand_offset == 'r' && operand_offset[1] >= '0' && operand_offset[1] <= MaxRegisterNumber + '0' && strlen(operand_offset) == 2)
 				line_data->machine_code.bits.dest_reg = operand_offset[1] - '0';
 		}
-		return 0;
+		return;
 	}
 
 	/* Register address. */
@@ -533,7 +537,7 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 			line_data->machine_code.bits.dest_address = 3;
 			line_data->machine_code.bits.dest_reg = operand[1] - '0';
 		}
-		return 0;
+		return;
 	}
 
 	/* Direct address. */
@@ -542,18 +546,31 @@ int update_operand(LineData* line_data, char* operand,char* operand_offset, int 
 			line_data->machine_code.bits.src_address = 1;
 		else 
 			line_data->machine_code.bits.dest_address = 1;
-		return 0;
 	}
-
-	/* For immediate address it is already 0. */
-	return 0;
 }
 
-int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int i, int line_num, int addr) {
+/**
+ * Add a line to the command lines list.
+ *
+ * @param operand
+ * @param operand_offset
+ * @param work_on_src
+ *   Whether to set the source or destination address.
+ * @param command_index
+ *   The command being performed.
+ * @param line_num
+ * @param addr
+ *   Addressing type, either the source address or the destination address
+ *   bits.
+ *
+ * @return
+ *   1 on success.
+ */
+int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int command_index, int line_num, int addr) {
 	LineData* line_data = NULL;
 	switch (addr) {
 		case 0: 
-			if ((!commands[i].src_imidiate_address && work_on_src) || (!commands[i].dest_imidiate_address && !work_on_src)) {
+			if ((!commands[command_index].src_imidiate_address && work_on_src) || (!commands[command_index].dest_imidiate_address && !work_on_src)) {
 				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
@@ -569,7 +586,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			break;
 
 		case 1:
-			if ((!commands[i].src_direct_address && work_on_src) || (!commands[i].dest_direct_address && !work_on_src)) {
+			if ((!commands[command_index].src_direct_address && work_on_src) || (!commands[command_index].dest_direct_address && !work_on_src)) {
 				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
@@ -583,7 +600,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			break;
 
 		case 2:
-			if ((!commands[i].src_index_address && work_on_src) || (!commands[i].dest_index_address && !work_on_src)) {
+			if ((!commands[command_index].src_index_address && work_on_src) || (!commands[command_index].dest_index_address && !work_on_src)) {
 				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
@@ -596,7 +613,6 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			parser_data.commands_list = list_append(parser_data.commands_list, line_data);
 		
 			/* Adding offset address. */
-
 			if (isdigit(*operand_offset) || *operand_offset=='+' || *operand_offset=='-') {
 				parser_data.IC++;
 				NewLineData(line_data);
@@ -620,7 +636,7 @@ int add_operand_lines (char *operand, char *operand_offset, int work_on_src, int
 			break;
 
 		case 3:
-			if  ((!commands[i].src_direct_reg_address && work_on_src) || (!commands[i].dest_direct_reg_address && !work_on_src)) {
+			if  ((!commands[command_index].src_direct_reg_address && work_on_src) || (!commands[command_index].dest_direct_reg_address && !work_on_src)) {
 				error_set("Error", "Illegal address.\n", line_num);
 				return 0;
 			}
@@ -649,10 +665,8 @@ int parse() {
 	LineData* line_data = NULL;
 	char *word;
 	char command_type[MaxRegisterNumber];
-	/* Used for destination address only. */
-	int address;
 	int line_num = 0;
-	int i, j;
+	int command_index, j;
 
 	printf("Parsing %s.\n", reader_get_file_name(ReaderFileExtension));
 	while ((line = reader_get_line())) {
@@ -758,14 +772,14 @@ int parse() {
 		}
 
 		/* Find command code. */
-		for (i = 0; i < CommandsAmount && strncmp(word, command_names[i], current_char - word); i++);
-		if (i == CommandsAmount) {
+		for (command_index = 0; command_index < CommandsAmount && strncmp(word, command_names[command_index], current_char - word); command_index++);
+		if (command_index == CommandsAmount) {
 			error_set("Error", "Unknown command.\n", line_num);
 			continue;
 		}
 
 		/* Set command code on the line. */
-		line_data->machine_code.bits.opcode = i;
+		line_data->machine_code.bits.opcode = command_index;
 		/* Find '/0' or /1 , assuming /0 is not followed by other options. */
 		NextWord(current_char);
 		command_type[0] = *current_char;
@@ -850,19 +864,19 @@ int parse() {
 		}
 
 		/* No operand required. */
-		if (!commands[i].src_operand && !commands[i].dest_operand && *operand1 != '\0') {
+		if (!commands[command_index].src_operand && !commands[command_index].dest_operand && *operand1 != '\0') {
 			error_set("Error", "No operands required.\n", line_num);
 			continue;
 		}
 
 		/* One operand required. */
-		if (!commands[i].src_operand && commands[i].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
+		if (!commands[command_index].src_operand && commands[command_index].dest_operand && (*operand1 == '\0' || *operand2 != '\0')) {
 			error_set("Error", "Exactly one operand required.\n", line_num);
 			continue;
 		}
 
 		/* Two operands required. */
-		if (commands[i].src_operand && commands[i].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
+		if (commands[command_index].src_operand && commands[command_index].dest_operand &&  (*operand1 == '\0' || *operand2 == '\0')) {
 			error_set("Error", "Two operands required.\n", line_num);
 			continue;
 		}
@@ -872,19 +886,18 @@ int parse() {
 		if (*operand2 != '\0') {
 			update_operand(line_data, operand1, operand1_offset, 1);
 			update_operand(line_data, operand2, operand2_offset, 0);
-			address = line_data->machine_code.bits.dest_address;
 
-			if (!add_operand_lines(operand1, operand1_offset, 1, i, line_num, line_data->machine_code.bits.src_address))
+			if (!add_operand_lines(operand1, operand1_offset, 1, command_index, line_num, line_data->machine_code.bits.src_address))
 				continue;
 
-			if (!add_operand_lines(operand2, operand2_offset, 0, i, line_num, address))
+			if (!add_operand_lines(operand2, operand2_offset, 0, command_index, line_num, line_data->machine_code.bits.dest_address))
 				continue;
 		}
 
 		/* When one operand exists. */
 		if (*operand1 != '\0' && *operand2 == '\0') {
 			update_operand(line_data, operand1, operand1_offset, 0);
-			if (!add_operand_lines(operand1, operand1_offset, 0, i, line_num, line_data->machine_code.bits.dest_address))
+			if (!add_operand_lines(operand1, operand1_offset, 0, command_index, line_num, line_data->machine_code.bits.dest_address))
 				continue;
 		}
 	}
