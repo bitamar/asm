@@ -95,10 +95,16 @@ void _parser_duplicated_label(void* data) {
  *   The line number.
  */
 void _parser_validate_label(char* label, int line_num) {
+	int i;
 	/* Check if label name is a register name. */
-	return;
 	if ((strlen(label) == 2 && label[0] == 'r' && (label[1] - '0') >= 0 && (label[1] - '0') <= MaxRegisterNumber) || !strcmp(label, "PC") || !strcmp(label, "SP") || !strcmp(label, "PSW")) {
 		error_set("Error", "Illegal label name, same as register.\n", line_num);
+	}
+	/* Check if label name is a command name. */
+	for(i = 0; i < CommandsAmount; i++) {
+		if (!strcmp(label, command_names[i])) {
+			error_set("Error", "Label name cannot be a command name.\n", line_num);
+		}
 	}
 }
 
